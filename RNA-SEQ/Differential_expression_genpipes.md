@@ -21,6 +21,7 @@ Table of Contents
   * [Unix generalities](#unix-generalities)
   * [Principles of RNA-seq](#principles-of-rna-seq)
   * [RNA-seq standard analysis](#rna-seq-standard-analysis)
+  * [Show and tell](#show-and-tell) 
 <!---
 * [Quality control check with FASTQC](#quality-control-check-with-fastqc)
   * [Working with FASTQC](#working-with-fastqc)
@@ -572,7 +573,7 @@ expression. That can be summarizeed in 4 main steps:
    transcripts produced) on your base or control condition vs your treatment or
    experimental condition.
    ![DE](https://hbctraining.github.io/DGE_workshop/img/de_theory.png)
-   * Image credit: Paul Pavlidis, UBC
+   * Image credit: Paul Pavlidis, UBC *
    
 4. PostProcessing (not in the figure): Visualizing your results and generating 
    figures. It is important to be able to explore the results of your pipeline, 
@@ -580,3 +581,6 @@ expression. That can be summarizeed in 4 main steps:
    figures and summaries of these results.
    ![figure](https://galaxyproject.github.io/training-material/topics/transcriptomics/images/rna-seq-viz-with-volcanoplot/volcanoplot.png)
    *Image from https://training.galaxyproject.org/training-material/topics/transcriptomics/tutorials/rna-seq-viz-with-volcanoplot/tutorial.html*
+
+### Show and tell
+*** NOW YOU CAN TRY IT YOURSELF ***
