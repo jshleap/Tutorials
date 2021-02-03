@@ -21,12 +21,12 @@ Table of Contents
   * [Unix generalities](#unix-generalities)
   * [Principles of RNA-seq](#principles-of-rna-seq)
   * [RNA-seq standard analysis](#rna-seq-standard-analysis)
-
+<!---
 * [Quality control check with FASTQC](#quality-control-check-with-fastqc)
   * [Working with FASTQC](#working-with-fastqc)
   * [Understanding the report](#understanding-the-report)
   * [Generating a report for your files](#generating-a-report-for-your-files)
-<!---
+
 * [Trimming and adapter removal with Trimmomatic](#trimming-and-adapter-removal-with-trimmomatic)
   * [Introduction to Trimmomatic](#introduction-to-trimmomatic)
   * [Understanding Trimmomatic options](#understanding-trimmomatic-options)
@@ -173,7 +173,7 @@ explained in [Moving files from and to a remote server](#moving-files-from-and-t
 or you can use the editors available in the cluster (i.e. nano, vin, emacs). To
 use nano, you simply type `nano` in the terminal, and a blank space will show up:
 
-![Nano](../images/Nano.png)
+![Nano](https://github.com/jshleap/Tutorials/blob/main/images/Nano.png?raw=true)
 
 #### Downloading files from the web
 There are many unix commands to download files from the web. Two of the most
@@ -398,8 +398,8 @@ squeue -u jshleap
 renders:
 
 ```
-          JOBID     USER              ACCOUNT           NAME  ST  TIME_LEFT NODES CPUS TRES_PER_N MIN_MEM NODELIST (REASON) 
-       44129014  jshleap      def-jshleap_cpu             sh   R      59:45     1    1        N/A    256M gra796 (None) 
+ JOBID     USER        ACCOUNT      NAME  ST  TIME_LEFT NODES CPUS TRES_PER_N MIN_MEM NODELIST (REASON) 
+44129014  jshleap  def-jshleap_cpu   sh   R      59:45     1    1        N/A    256M   gra796   (None) 
 ```
 
 Which gives you the jobid (the ID of the launched job) the user, the account used
@@ -456,5 +456,127 @@ you can use in your script:
 
 For a more comprehensive list, check the slurm manual [here](https://slurm.schedmd.com/sbatch.html).
 
-### Principles of RNA-seq
+### Principles of RNA-Seq
+RNA-Seq or RNA sequencing is a molecular technique focused in obtaining  a 
+collection of RNA molecules (often refer to as library) from a set of samples.
+Often the downtream bioinformatic process of analysing and comparing said libraries
+is bundle within the term.
+
+RNA-Seq is the main technique for transcriptomics analyses and provides information
+about genes being expressed (profiling), identifying variants in gene transcription
+(i.e alternative splicing), and -the subject of this tutorial- comparing the 
+expression between two treatments of conditions.
+
+<p align="center">
+  <img src="https://github.com/jshleap/Tutorials/blob/main/images/RNA_seq.png?raw=true"><br>
+  <b>Image by Malachi Griffith, Jason R. Walker, Nicholas C. Spies, Benjamin J. 
+Ainscough, Obi L. Griffith - http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004393, CC BY 2.5, https://commons.wikimedia.org/w/index.php?curid=53055894</b>
+</p>
+ 
+Most often the transcriptome sequencing is done on short fragment technologies
+such Illumina, which produces hundreds of million of short reads of the cDNA that
+was created in the laboratory. This tutorial assumes that you are already familiar
+with the process from total RNA to cDNA library construction and we will focus
+on what happes from sequencing to dowtream analyses.
+
+#### Illumina sequencing of cDNA
+To generate the cDNA library, the most common protocol uses tagmentation. In brief,
+you fragment you total (or rRNA depleted) RNA and reverse transcribed using primer
+that contains a known tagging sequence in the 5' end, and a random hexamer sequence
+in the 3' end. Once the reverse transcription have generated a di-tagged (tagged 
+with at least two primers), single stranded cDNA, the fragment is purified and 
+amplified, adding Illumina adapters and barcodes:
+
+<p align="center">
+  <img src="https://media.springernature.com/full/springer-static/image/art%3A10.1038%2Fnmeth.f.355/MediaObjects/41592_2012_Article_BFnmethf355_Fig1_HTML.jpg?as=webp"><br>
+   <a href="https://doi.org/10.1038/nmeth.f.355"> from https://doi.org/10.1038/nmeth.f.355</a>
+</p>
+
+This is important for downstream analyses, since it gives us information about
+the architechture of the constructs. We have to remove sources of noise such as:
+1. Spurious amplification: Fragments without adapter sequence
+2. Non-biological variation: Such as the one created by the barcodes, adaptor 
+   and primer tag.
+   
+Once the library is generated, is loaded into a flowcell to be placed into the
+sequencer. The flow cell is design with lines which in turn contain nanowells, 
+and each nanowell contains oligonucleotide anchors that are complementary to
+the Illumina adapters.
+
+<p align="center">
+  <img src="https://www.hackteria.org/wiki/images/a/a5/FlowCell.jpg"><br>
+  <b>taken from https://www.hackteria.org/wiki/HiSeq2000_-_Next_Level_Hacking</b>
+</p>
+
+The cDNA library you have created "flows" within the flow cell and the cDNA
+fragments attach to the wells by affinity between the anchors and the adaptors
+attached to the RNA fragments during the tagmentation process. This creates a bridge
+between both ends (reverse and forward adaptors) that allows the polymerase to
+generate the new fragment in both ways, essentially generating the forward (often 
+called R1 in the resulting files) and reverse (often called R2 in the resulting 
+files) reads of the target cDNA:
+
+<p align="center">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/6/65/Cluster_Generation.png"><br>
+  <b>author: https://commons.wikimedia.org/w/index.php?title=User:DMLapato&action=edit&redlink=1</b>
+</p>
+
+After the sequencing process, you will receive a pair (or more) files with your
+sequences. If you multiplexed your samples (pool samples together and added a 
+barcode) you need to demultiplex them, i.e. split each sample from the run. This
+is oftentimes done with the sequencing service, but is not always the case. 
+In this tutorial I would skip the demultplexing, but in a nutshell demultiplexing
+splits your data into your barcoded samples, often using the command `bcl2fastq`:
+
+```bash
+bcl2fastq --run-folder-dir <FOLDER WITH ILLUMINA DATA> -p <THREADS/CPUS> --output-dir <OUTPUT DIRECTORY> --no-lane-splitting
+```
+
+replacing the terms encapsuled between `<>` with your data. Since this is not the 
+most common scenario, I am not going to go into details. 
+
 ### RNA-seq standard analysis
+<p align="center">
+  <img src="https://rna-seqblog.com/wp-content/uploads/2016/02/typical.jpg"><br>
+ <b> from https://rna-seqblog.com/review-of-rna-seq-data-analysis-tools/ </b>
+</p>
+
+The steps in the figure above show the standard analysis for differential 
+expression. That can be summarizeed in 4 main steps:
+
+1. Preprocessing: This step is very important as it weeds out noise from true 
+   signal. In this step we have to analyse and visualize the quality of the raw
+   data and remove low quality reads that might affect our downstream analyses.
+   We will touch on how to visualize and identify contaminants in the section
+   [Quality control check with FASTQC](#quality-control-check-with-fastqc). Once 
+   we already established contamination and the range of acceptable quality 
+   thresholds, we need to trimm our reads. During this process we will remove all
+   non-biological sequences (i.e. adapters, barcodes, etc) as well as low quality
+   reads. We will cover this in detail in the section [Trimming and adapter removal with Trimmomatic](#trimming-and-adapter-removal-with-trimmomatic).
+   ![report](http://cgga.org.cn:9091/gliomasdb/images/figure_1.jpg)
+   *Image from http://cgga.org.cn:9091/gliomasdb/images/figure_1.jpg*
+
+2. Alignment and Assembly: Since we sheared our transcriptome, we now have little 
+   pieces, and now we have the task to reconstruct full size transcriptomes. To 
+   do this we need to map our reads to a reference genome (if we have one) or 
+   do de novo assembly. The former is much more accurate if a suitable reference
+   is available. In this tutorial we will focus on mapping to the human genome.
+   Once we know where each reads go relative to the reference genome (mapping),
+   we can piece together our transcriptome (assembly).
+   ![mapping](https://home.cc.umanitoba.ca/~frist/PLNT7690/lec12/MapVsAssemble.png)
+   *Image from http://jura.wi.mit.edu/bio/education/hot_topics/RNAseq/RNA_Seq.pdf*
+
+3. Analysis: In this step we need to quantify and compare abundances of transcripts
+   mapped to individual genes across treatments/conditions. We can estimate which
+   genes have been upregulated (more transcripts produced) or downregulated (less
+   transcripts produced) on your base or control condition vs your treatment or
+   experimental condition.
+   ![DE](https://hbctraining.github.io/DGE_workshop/img/de_theory.png)
+   * Image credit: Paul Pavlidis, UBC
+   
+4. PostProcessing (not in the figure): Visualizing your results and generating 
+   figures. It is important to be able to explore the results of your pipeline, 
+   and is easier to do it visualy. In the postprocessing step, you can generate
+   figures and summaries of these results.
+   ![figure](https://galaxyproject.github.io/training-material/topics/transcriptomics/images/rna-seq-viz-with-volcanoplot/volcanoplot.png)
+   *Image from https://training.galaxyproject.org/training-material/topics/transcriptomics/tutorials/rna-seq-viz-with-volcanoplot/tutorial.html*
