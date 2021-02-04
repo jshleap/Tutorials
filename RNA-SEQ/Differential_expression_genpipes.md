@@ -22,12 +22,13 @@ Table of Contents
   * [Principles of RNA-seq](#principles-of-rna-seq)
   * [RNA-seq standard analysis](#rna-seq-standard-analysis)
   * [Show and tell](#show-and-tell) 
-<!---
+
 * [Quality control check with FASTQC](#quality-control-check-with-fastqc)
+  *[Before we start: File formats](#before-we-start-file-formats)
   * [Working with FASTQC](#working-with-fastqc)
   * [Understanding the report](#understanding-the-report)
   * [Generating a report for your files](#generating-a-report-for-your-files)
-
+<!---
 * [Trimming and adapter removal with Trimmomatic](#trimming-and-adapter-removal-with-trimmomatic)
   * [Introduction to Trimmomatic](#introduction-to-trimmomatic)
   * [Understanding Trimmomatic options](#understanding-trimmomatic-options)
@@ -584,3 +585,78 @@ expression. That can be summarizeed in 4 main steps:
 
 ### Show and tell
 *** NOW YOU CAN TRY IT YOURSELF ***
+
+## Quality control check with FASTQC
+### Before we start: File formats
+Before we start with the actual analysis, we need to understand the file formats
+that we will be working with. On bioinformatics there are two main sequence
+formats (Fastq and Fasta) and two main mapping formats (BAM and SAM).
+#### Simple sequence formats: Fasta and Fastq
+Before the advent of next generation sequencing (NGS) technologies, most sequence
+data was stored in a simple sequence file called a FAST**A** file. Fasta files
+contain a header, with information about the sequence, and the sequence:
+
+![fasta](https://www.researchgate.net/profile/Morteza_Hosseini17/publication/309134977/figure/fig1/AS:417452136648705@1476539753111/A-sample-of-the-Multi-FASTA-file_W640.jpg)
+
+*from DOI: 10.3390/info7040056 *
+
+Fasta files can be multiline (as above), where the sequence is broken down into
+lines, or single line. The multiline fasta files is by far the most common. The
+sequence can be either protein, DNA or RNA. The header in a fasta file start 
+with a > symbol, and is followed by the sequence ID (often the accession number
+in some database). More information can be place there  and the format varies 
+from source to source. 
+
+Fasta files do not have quality information as the chain termination method 
+sequencing (also known as Sanger sequencing) did not produce that information.
+However, this changed with teh NGS technologies, where a probability of correctly
+calling each base can be computed. A new file format was needed for such information,
+and the FAST**Q** file was born. Since the earlier NGS technologies only produced
+short reads, fastq files sequence and qualities are represented in a single line:
+
+![fastq](https://www.researchgate.net/profile/Reinhard_Schneider2/publication/256095540/figure/fig7/AS:298005665206280@1448061495472/FASTQ-file-1st-line-always-starts-with-the-symbol-followed-by-the-sequence.png)
+
+*from https://www.researchgate.net/publication/256095540_1756-0381-6-13*
+
+The fastq files' header starts with an @ symbol, followed by the sequence identifyer
+(often represents the techonology used, the lane, and other information). The next
+line in a fastq file is the sequence, which is usually DNA only (RNA is 
+retrotranscribed into cDNA). The third line, identified by a leading + sign, serves
+as secondary information for each read, but is often empty. The last line is a 
+series of alphanumeric characters that represent the quality of each base. Now 
+you might be asking, wasn't the quality a probability? How can a probability be
+a character? This is a good question, which brings us to a concept called encoding.
+Encoding is the "mapping" of values to some other value, often time more concise, 
+the way the quality of the bases are written. There are many encodings, but 
+the most popular are Sanger, Solexa, Ilumina 1.3+, Illumina 1.5+, and illumina 
+1.8+. In summary, is a character that represents the confidence you have in a 
+given base call:
+
+![phred](https://github.com/CristescuLab/Tutorials/raw/master/NGS_QC/images/fastq_phread-base.png)
+
+*from https://en.wikipedia.org/wiki/FASTQ_format#Encoding*
+
+As you can see, the point at which the quality starts (quality score of 0) is 
+mapped differently in the [ASCII table](https://en.wikipedia.org/wiki/ASCII) 
+depending on the encoding. For example, Illumina 1.3+ and 1.5+ are a PHRED-64
+encoding which means that 0 aligned with the 64th character in the ASCII table
+(@). However, Illumina 1.5+ actually starts at quality 3 (it does not report 
+anything below that).
+
+But what does a quality score means? It s related to the probability of an error:
+
+|Phred Quality Score |Probability of incorrect base call|Base call accuracy|
+|--- |--- |--- |
+|10|1 in 10|90%|
+|20|1 in 100|99%|
+|30|1 in 1000|99.9%|
+|40|1 in 10,000|99.99%|
+|50|1 in 100,000|99.999%|
+|60|1 in 1,000,000|99.9999%|
+
+As a rule of thumb a Phred score above 20 (99% chances to be right) is considered 
+acceptable and above 30 (99.9% chances to be right) as good.
+
+### Working with FASTQC
+### Understanding the report
+### Generating a report for your files
