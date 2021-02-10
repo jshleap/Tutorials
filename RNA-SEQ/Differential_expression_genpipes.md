@@ -658,5 +658,233 @@ As a rule of thumb a Phred score above 20 (99% chances to be right) is considere
 acceptable and above 30 (99.9% chances to be right) as good.
 
 ### Working with FASTQC
+I have shown several examples working with `fastqc`. In this section I will walk
+you through some options, starting with getting help: 
+
+```bash
+module load fastqc/0.11.9
+fastqc -h
+```
+This will render:
+
+```angular2html
+            FastQC - A high throughput sequence QC analysis tool
+
+SYNOPSIS
+
+	fastqc seqfile1 seqfile2 .. seqfileN
+
+    fastqc [-o output dir] [--(no)extract] [-f fastq|bam|sam] 
+           [-c contaminant file] seqfile1 .. seqfileN
+
+DESCRIPTION
+
+    FastQC reads a set of sequence files and produces from each one a quality
+    control report consisting of a number of different modules, each one of 
+    which will help to identify a different potential type of problem in your
+    data.
+    
+    If no files to process are specified on the command line then the program
+    will start as an interactive graphical application.  If files are provided
+    on the command line then the program will run with no user interaction
+    required.  In this mode it is suitable for inclusion into a standardised
+    analysis pipeline.
+    
+    The options for the program as as follows:
+    
+    -h --help       Print this help file and exit
+    
+    -v --version    Print the version of the program and exit
+    
+    -o --outdir     Create all output files in the specified output directory.
+                    Please note that this directory must exist as the program
+                    will not create it.  If this option is not set then the 
+                    output file for each sequence file is created in the same
+                    directory as the sequence file which was processed.
+                    
+    --casava        Files come from raw casava output. Files in the same sample
+                    group (differing only by the group number) will be analysed
+                    as a set rather than individually. Sequences with the filter
+                    flag set in the header will be excluded from the analysis.
+                    Files must have the same names given to them by casava
+                    (including being gzipped and ending with .gz) otherwise they
+                    won't be grouped together correctly.
+                    
+    --nano          Files come from nanopore sequences and are in fast5 format. In
+                    this mode you can pass in directories to process and the program
+                    will take in all fast5 files within those directories and produce
+                    a single output file from the sequences found in all files.                    
+                    
+    --nofilter      If running with --casava then don't remove read flagged by
+                    casava as poor quality when performing the QC analysis.
+                   
+    --extract       If set then the zipped output file will be uncompressed in
+                    the same directory after it has been created.  By default
+                    this option will be set if fastqc is run in non-interactive
+                    mode.
+                    
+    -j --java       Provides the full path to the java binary you want to use to
+                    launch fastqc. If not supplied then java is assumed to be in
+                    your path.
+                   
+    --noextract     Do not uncompress the output file after creating it.  You
+                    should set this option if you do not wish to uncompress
+                    the output when running in non-interactive mode.
+                    
+    --nogroup       Disable grouping of bases for reads >50bp. All reports will
+                    show data for every base in the read.  WARNING: Using this
+                    option will cause fastqc to crash and burn if you use it on
+                    really long reads, and your plots may end up a ridiculous size.
+                    You have been warned!
+                    
+    --min_length    Sets an artificial lower limit on the length of the sequence
+                    to be shown in the report.  As long as you set this to a value
+                    greater or equal to your longest read length then this will be
+                    the sequence length used to create your read groups.  This can
+                    be useful for making directly comaparable statistics from 
+                    datasets with somewhat variable read lengths.
+                    
+    -f --format     Bypasses the normal sequence file format detection and
+                    forces the program to use the specified format.  Valid
+                    formats are bam,sam,bam_mapped,sam_mapped and fastq
+                    
+    -t --threads    Specifies the number of files which can be processed
+                    simultaneously.  Each thread will be allocated 250MB of
+                    memory so you shouldn't run more threads than your
+                    available memory will cope with, and not more than
+                    6 threads on a 32 bit machine
+                  
+    -c              Specifies a non-default file which contains the list of
+    --contaminants  contaminants to screen overrepresented sequences against.
+                    The file must contain sets of named contaminants in the
+                    form name[tab]sequence.  Lines prefixed with a hash will
+                    be ignored.
+
+    -a              Specifies a non-default file which contains the list of
+    --adapters      adapter sequences which will be explicity searched against
+                    the library. The file must contain sets of named adapters
+                    in the form name[tab]sequence.  Lines prefixed with a hash
+                    will be ignored.
+                    
+    -l              Specifies a non-default file which contains a set of criteria
+    --limits        which will be used to determine the warn/error limits for the
+                    various modules.  This file can also be used to selectively 
+                    remove some modules from the output all together.  The format
+                    needs to mirror the default limits.txt file found in the
+                    Configuration folder.
+                    
+   -k --kmers       Specifies the length of Kmer to look for in the Kmer content
+                    module. Specified Kmer length must be between 2 and 10. Default
+                    length is 7 if not specified.
+                    
+   -q --quiet       Supress all progress messages on stdout and only report errors.
+   
+   -d --dir         Selects a directory to be used for temporary files written when
+                    generating report images. Defaults to system temp directory if
+                    not specified.
+                    
+BUGS
+
+    Any bugs in fastqc should be reported either to simon.andrews@babraham.ac.uk
+    or in www.bioinformatics.babraham.ac.uk/bugzilla/
+```
+There are a few options I will not discuss (they are either too advanced or self
+evident) like `--help`, `--quiet`, `--limits`, `--min_length`, `--nofilter`, 
+`--nano`, and `--casava`. The last two are from a specific technologies. Nano 
+refers to [nanopore](https://nanoporetech.com/), and casava to 
+[Casava](https://gaow.github.io/genetic-analysis-software/c/casava/) 
+software, both cases outside of the scope of this tutorial.
+
+The `-o` or `--outdir` options allow you to modify the output directory. Say that
+your current working directory is `/home/someuser`, but you want your outputs to
+be in `/home/someuser/fastqc_results`, by passing the full path to `-o` it will
+generate the files there:
+
+```bash
+mkdir -p fastqc_results
+fastqc -o fastqc_results file.fastq.gz
+```
+Note that the output directory must exist (i.e. you need to create it ahead of 
+time). By default, the individual results will be created in a compressed folder. 
+If you wish to have it uncompress, you can use the option `--extract`. On any 
+non-interactive run of fastqc (like in Compute Canda) `--extract` is set by 
+default, if you wish ***not*** to extract the archive, you can use the option
+`--no-extract`.
+
+Often, the java binary (the java program) is not set in your path. Fastqc allows
+you give a specific path with the `--java` option (on Compute Canada systems is 
+on path if you loaded fastqc correctly). Say for example that java is not in your
+path (i.e. if you type `java --version` it gives you an error) but you installed
+it in `/opt`, you can pass it to fastqc by:
+
+```bash
+fastqc -j /opt/java file.fastq.gz
+```
+
+It is important to know that for efficiency and visualization purposes, FastQC
+adjust computations. For example, most of the analyses are made on a subset of 
+the data. Also, bases (i.e. quality, etc) are grouped into chunks. This behaviour
+can be disable with the `--no-group` option, with the caveat that the plots can 
+become very big, and the analyses might fail.
+
+Another useful flag is when analysing reads that have been already mapped to a 
+reference or your reads are in bam or sam formats. By providing a valid format 
+(bam,sam,bam_mapped,sam_mapped and fastq) to the `--format` option, the report 
+will be done on inputs with that format.
+
+Like with many other tools, FastQC have the ability to use many threads. This
+is important in HPC systems such as Compute Canada where you can use multiple
+threads by requesting them to the scheduler. You can pass multiple threads to 
+the `--threads` option. FastQC however, does parallization differently. It provides
+a single file per each thread that you request, so is lost on single file reports.
+
+A very important option that FastQC has, is the ability to provide a set of known
+contaminants. Say that you are working with humans, but in your lab, there is 
+significant work with mice. You can put known mice sequences to be detected in
+the report so you can test for contaminants. The way to do this is passing a tab
+delimited file like this:
+
+```text
+# Lines prefixed with a hash will be ignored.
+# The format is Name [tab] SEQUENCE
+miceSeq1    ACTGATGACCAGTAGCTGATGTTGGTAGT
+miceSeq2    ACTGATGACCAAAAAAAAATGATGTTGGTAGT
+miceSeq3    ACTGATGACTGTTGGTAGT
+```
+
+If you called your file `contaminants.txt`, then you can pass it to fastqc throuh
+the `--contaminants` option:
+
+```bash
+fastqc -c contaminants.txt
+```
+
+By default it will use a database of usual contaminants/overrepresented sequences.
+
+Another important option is `--adapters`. This option allow you to provide a set
+of non canonical adapters to be test if they are present. The file follows the
+same structure as the contaminants file.
+
+Oftentimes we want to detect [kmers](https://en.wikipedia.org/wiki/K-mer) or
+repeated sequences of a particular lenght. FastQC defaults at kmers of size 7, 
+but can be modified with the option `kmers`. This option will only take kmers 
+from 2 to 10 bases.
+
+Finally, the `--dir` option allows you to write temporary files in a different
+location than the default `/tmp`. This is important when you know that the 
+temporary directory is too small.
+
 ### Understanding the report
+As a test, let's run FastQC on the fastq file `right.norm.fq` downloaded earlier.
+Let's assume that we want to not extract the contents, use kmers of size 5, use
+the SLURM temporary directory to write the temporary files and to not group bases,
+and I want the results to be in a folder called `fastqc_results`:
+
+```bash
+mkdir -p fastqc_results
+fastqc --kmers 5 --dir ${SLURM_TMPDIR} --noextract --nogroup \
+  --outdir fastqc_results right.norm.fq
+```
+
+right.norm_fastqc.html  right.norm_fastqc.zip  right.norm.fq
 ### Generating a report for your files
