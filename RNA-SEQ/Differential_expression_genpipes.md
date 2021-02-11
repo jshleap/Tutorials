@@ -894,14 +894,19 @@ into the fastq report and its contents. FastQC contains several modules that tes
 the quality of your reads. If the sequences pass the (mostly rules of thumb) 
 statiscics, you will see a checkmark next to the module, otherwise an X:
 
-####Basic Statistics
+#### Basic Statistics
 This just gives you some basic information about your reads, like name, encoding,
 type of file, number of sequences, poor quality ones, lenght, and GC content:
 
-Good Sequence            |  Solarized Ocean
+Good Sequence            |  Bad Sequence
 :-------------------------:|:-------------------------:
-![](https://github.com/jshleap/Tutorials/raw/main/images/Basic_good.png)  |  
-![](https://github.com/jshleap/Tutorials/raw/main/images/Basic_bad.png)
+<img src="https://github.com/jshleap/Tutorials/raw/main/images/Basic_good.png" >  | <img src="https://github.com/jshleap/Tutorials/raw/main/images/Basic_bad.png">
 
+#### Per base sequence quality
+This plot shows you the quality of the sequence per base:
+
+Good Sequence            |  Bad Sequence
+:-------------------------:|:-------------------------:
+<img src="https://github.com/jshleap/Tutorials/raw/main/images/quality_good.png" >  | <img src="https://github.com/jshleap/Tutorials/raw/main/images/quality_bad.png">
 
 ### Generating a report for your files
