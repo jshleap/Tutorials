@@ -27,13 +27,13 @@ Table of Contents
   * [Working with FASTQC](#working-with-fastqc)
   * [Understanding the report](#understanding-the-report)
   * [Generating a report for your files](#generating-a-report-for-your-files)
-<!---
+
 * [Trimming and adapter removal with Trimmomatic](#trimming-and-adapter-removal-with-trimmomatic)
   * [Introduction to Trimmomatic](#introduction-to-trimmomatic)
   * [Understanding Trimmomatic options](#understanding-trimmomatic-options)
   * [Working with Trimmomatic](#working-with-trimmomatic)
   * [Trimming your reads](#trimming-your-reads)
-
+<!---
 * [Alignment and junction discovery using STAR](#alignment-and-junction-discovery-using-star)
   * [Understanding STAR options: Generating indices](#understanding-star-options-generating-indices)
   * [Understanding STAR options: Mapping](#understanding-star-options-mapping)
@@ -79,14 +79,14 @@ touch up on a few things:
 ### Connecting to a remote server
 On unix-like systems we can use the secure shell command `ssh` to connect to a 
 remote server. In the terminal we can:
-```bash
+```commandline
 ssh username@remotehost
 ```
 username being your username in the remote host and remote host the IP or name 
 of the remote server. For example, let's say that you have an account in the
 [Graham](https://docs.computecanada.ca/wiki/Graham) cluster under the username
 someuser, you could connect to graham through a unix terminal:
-```bash
+```commandline
 ssh someuser@graham.computecanada.ca
 ```
 This will connect you to one of the Compute Canada HPC called Graham. For Windows
@@ -104,7 +104,7 @@ one is the rsync command, which allows you to also move only files and folder th
 are not up to date in the destination. In unix like systems the general command
 is:
 
-```bash
+```commandline
 rsync source destination
 ```
 
@@ -112,7 +112,7 @@ To better understand this, let's assume that in our local computer (i.e. your
 laptop) you have a file called `afile.txt` in the path `/home/someuser/test`. 
 Let's say that you want to move it to Graham supercomputer. You can so this by:
 
-```bash
+```commandline
 rsync /home/someuser/test/afile.txt someuser@graham.computecanada.ca
 ```
 
@@ -120,7 +120,7 @@ This will put afile.txt in Graham's `/home/someuser`. Now let's say that you wan
 to put it in a different location, say that you have a folder within you home (
 `/home/someuser`) called `testing`. You can do:
 
-```bash
+```commandline
 rsync /home/someuser/test/afile.txt someuser@graham.computecanada.ca:/home/someuser/testing
 ```
 
@@ -133,14 +133,14 @@ Just a brief mention of how you can create a folder and move around a unix syste
 Say you just connected to the cluster (i.e. Graham) and want to create a folder
 in your home call test. You can do this by:
 
-```bash
+```commandline
 mkdir test
 ```
 
 Now you have created test in `/home/someuser` (which is the home of `someuser`), 
 now to move into that folder we can use the change directory command `cd`:
 
-```bash
+```commandline
 cd /home/someuser/test
 ```
 
@@ -148,13 +148,13 @@ You can check your current path with the command `pwd`. Paths can be absolute (
 it gives you the full path from `/` to where you are), or relative to where you
 are. For example, to get back to your home `/home/someuser`, you could:
 
-```bash
+```commandline
 cd /home/someuser
 ```
 
 as an absolute path or:
 
-```bash
+```commandline
 cd ..
 ```
 
@@ -164,7 +164,7 @@ Your home also has a special character to refer to without using an absolute pat
 with is the tilde (`~`). No matter where you are, you can always refer to you home
 bu `~`. For example to move to the test folder you created earlier you can do:
 
-```bash
+```commandline
 cd ~/test
 ```
 
@@ -188,14 +188,14 @@ you can just click on the link and will start downloading, but if you want it to
 download it directly on the terminal (or in a server's terminal), you can use 
 `wget` as:
 
-```bash
+```commandline
 wget https://www.sharcnet.ca/~jshleap/tips_n_tricks/right.norm.fq
 ```
 
 That will start the download of this fastqfile. Wget has a lot of options that
 can be seen using the manual:
 
-```bash
+```commandline
 man wget
 ```
 but their explanation is out of the scope of this tutorial.
@@ -225,7 +225,7 @@ Let's say that you normally run a program called `myprogram`, and it takes a fil
 called `afile.txt` as input. Perhaps you can run this program in your own computer 
 with 4 cpus like:
 
-```bash
+```commandline
 myprogram -t 4 afile.txt
 ```
 
@@ -235,7 +235,7 @@ the input `afile.txt` and those 32 cpus, you will be using 100Mb of memory, and
 it will take roughly 2 hours. Then, in a nano window, you should write something
 like this:
 
-```bash
+```commandline
 #!/bin/bash                       
 #SBATCH --account=def-someuser  #<-- this is the account of the PI
 #SBATCH --time=0-2:00:00        #<-- you need to provide the expected time (dd-hh:mm-ss)
@@ -248,7 +248,7 @@ if you'd like to save the modified file, and will ask you to name the file. Let'
 assume we named it `submit.sh`. Now we have a submission script ready, and we 
 can proceed for the submission using sbatch:
 
-```bash
+```commandline
 sbatch submit.sh
 ```
 
@@ -268,7 +268,7 @@ of `myprogram` you would like to run [fastqc](
 https://www.bioinformatics.babraham.ac.uk/projects/fastqc/), then your `submit.sh`
 script should be changed to include the loading of fastqc. In Compute Canada systems:
 
-```bash
+```commandline
 module spider fastqc
 ```
 will render:
@@ -298,7 +298,7 @@ will render:
 Which means that there are 3 different versions of the program. To see an specific 
 version you can:
 
-```bash
+```commandline
 module spider fastqc/0.11.9
 ```
 
@@ -342,7 +342,7 @@ rendering:
 There it says that you need to load ***EITHER*** `StdEnv/2020` ***OR*** 
 `nixpkgs/16.09` before you can load `fastqc/0.11.9`. Now, we can try to load it:
 
-```bash
+```commandline
 module load StdEnv/2020 fastqc/0.11.9
 ```
 
@@ -386,13 +386,13 @@ list all users that have submitted a job. However, you can narrow the search to
 yourself by passing your username with the `-u` option. For example, if your
 username is `someuser`, you can do:
 
-```bash
+```commandline
 squeue -u someuser
 ```
 A more real example would be my own. I have started an interactive job (yes 
 there is a way) with my username `jshleap` and my own group `def-jshleap`, then:
 
-```bash
+```commandline
 squeue -u jshleap
 ```
 
@@ -417,13 +417,13 @@ access interactively. To schedule an interactive shell with SLURM, you can use
 the `salloc` command. You will need to pass the account through the option `--accoun`
 or `-A` for short. So in the example above, I would do either:
 
-```bash
+```commandline
 salloc -A def-jshleap
 ```
 
 or 
 
-```bash
+```commandline
 salloc --account=def-jshleap
 ```
 
@@ -434,7 +434,7 @@ passed to the `salloc` command to modify the request. For example, if we wanted
 8 cpus, 10Gb of memory, and two hours of computation, we can request an 
 interactive shell like this:
 
-```bash
+```commandline
 salloc -A def-jshleap --mem=10G --cpus-per-task=8 --time=00-02:00:00
 ```
 
@@ -530,7 +530,7 @@ is oftentimes done with the sequencing service, but is not always the case.
 In this tutorial I would skip the demultplexing, but in a nutshell demultiplexing
 splits your data into your barcoded samples, often using the command `bcl2fastq`:
 
-```bash
+```commandline
 bcl2fastq --run-folder-dir <FOLDER WITH ILLUMINA DATA> -p <THREADS/CPUS> --output-dir <OUTPUT DIRECTORY> --no-lane-splitting
 ```
 
@@ -626,6 +626,8 @@ as secondary information for each read, but is often empty. The last line is a
 series of alphanumeric characters that represent the quality of each base. Now 
 you might be asking, wasn't the quality a probability? How can a probability be
 a character? This is a good question, which brings us to a concept called encoding.
+
+#### Encoding
 Encoding is the "mapping" of values to some other value, often time more concise, 
 the way the quality of the bases are written. There are many encodings, but 
 the most popular are Sanger, Solexa, Ilumina 1.3+, Illumina 1.5+, and illumina 
@@ -642,6 +644,7 @@ encoding which means that 0 aligned with the 64th character in the ASCII table
 (@). However, Illumina 1.5+ actually starts at quality 3 (it does not report 
 anything below that).
 
+#### Phred Quality Score
 But what does a quality score means? It s related to the probability of an error:
 
 |Phred Quality Score |Probability of incorrect base call|Base call accuracy|
@@ -660,7 +663,7 @@ acceptable and above 30 (99.9% chances to be right) as good.
 I have shown several examples working with `fastqc`. In this section I will walk
 you through some options, starting with getting help: 
 
-```bash
+```commandline
 module load fastqc/0.11.9
 fastqc -h
 ```
@@ -799,7 +802,7 @@ your current working directory is `/home/someuser`, but you want your outputs to
 be in `/home/someuser/fastqc_results`, by passing the full path to `-o` it will
 generate the files there:
 
-```bash
+```commandline
 mkdir -p fastqc_results
 fastqc -o fastqc_results file.fastq.gz
 ```
@@ -816,7 +819,7 @@ on path if you loaded fastqc correctly). Say for example that java is not in you
 path (i.e. if you type `java --version` it gives you an error) but you installed
 it in `/opt`, you can pass it to fastqc by:
 
-```bash
+```commandline
 fastqc -j /opt/java file.fastq.gz
 ```
 
@@ -855,7 +858,7 @@ miceSeq3    ACTGATGACTGTTGGTAGT
 If you called your file `contaminants.txt`, then you can pass it to fastqc throuh
 the `--contaminants` option:
 
-```bash
+```commandline
 fastqc -c contaminants.txt
 ```
 
@@ -880,7 +883,7 @@ Let's assume that we want to not extract the contents, use kmers of size 5, use
 the SLURM temporary directory to write the temporary files and to not group bases,
 and I want the results to be in a folder called `fastqc_results`:
 
-```bash
+```commandline
 mkdir -p fastqc_results
 fastqc --kmers 5 --dir ${SLURM_TMPDIR} --noextract --nogroup \
   --outdir fastqc_results right.norm.fq
@@ -953,6 +956,10 @@ poor quality. Often times warnings occur when your sequence is shorter than
 your read length, and therefore the end of reads (or the end of the flowcell) 
 is of poor quality.
 
+Good Sequence            |  Bad Sequence
+:-------------------------:|:-------------------------:
+<img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/per_sequence_good.png" >  | <img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/per_sequence_bad.png">
+
 
 From FastQC documentation:
 >##### Warning
@@ -963,13 +970,20 @@ From FastQC documentation:
 > this equates to a 1% error rate.
 
 
-This is the case for our File1:
-![Per sequence quality scores of File1](https://github.com/jshleap/CristescuLab_misc/raw/master/Tutorials/NGS_QC/files/file1_R1_fastqc/Images/per_sequence_quality.png)
-
-#### *Can you explain the figure above?*
-
 ## Per base sequence content
-This module shows the proportion of bases in each position. In an unbiased library, the proportion of A, T, C, G, should run parallel to each other. If there is a bias, this could imply that the primers or adaptors were not remove, and therefore there would be a strong bias towards a certain composition. It could also mean that you have an over-fragmented library, creating over-represented k-mers, or a dataset that has been trimmed too aggressively. In amplicon sequencing, there tends to be biases in the composition of the given amplicon, especially when dealing with mitochondrial DNA.
+This module shows the proportion of bases in each position. In an unbiased 
+library, the proportion of A, T, C, G, should run parallel to each other. If 
+there is a bias, this could imply that the primers or adaptors were not remove,
+and therefore there would be a strong bias towards a certain composition. It 
+could also mean that you have an over-fragmented library, creating 
+over-represented k-mers, or a dataset that has been trimmed too aggressively. 
+In amplicon sequencing, there tends to be biases in the composition of the 
+given amplicon, especially when dealing with mitochondrial DNA.
+
+Good Sequence            |  Bad Sequence
+:-------------------------:|:-------------------------:
+<img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/content_good.png" >  | <img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/content_bad.png">
+
 
 From FastQC documentation:
 >#### Warning
@@ -977,14 +991,18 @@ From FastQC documentation:
 >#### Failure
 >This module will fail if the difference between A and T, or G and C is greater than 20% in any position.
 
- Let's take a look at file1:
-
-![Per sequence base content for file1](https://github.com/jshleap/CristescuLab_misc/raw/master/Tutorials/NGS_QC/files/file1_R1_fastqc/Images/per_base_sequence_content.png)
-
-#### What can you tell about this file?
-
 ## Per sequence GC content
-This module intends to show the proportion of GC content in the reads. The blue line represents a theoretical distribution (Normal) of your observed data. Deviations from this theoretical distribution often implies contamination of some kind (adapter/primer dimers, multiple species in the run). FastQC assumes that you are analyzing a  single genome, and therefore will issue a warning in multispecies libraries.
+This module intends to show the proportion of GC content in the reads. The blue
+line represents a theoretical distribution (Normal) of your observed data. 
+Deviations from this theoretical distribution often implies contamination of 
+some kind (adapter/primer dimers, multiple species in the run). FastQC assumes 
+that you are analyzing a  single genome, and therefore will issue a warning in 
+multispecies libraries.
+
+Good Sequence            |  Bad Sequence
+:-------------------------:|:-------------------------:
+<img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/GC_good.png" >  | <img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/GC_bad.png">
+
 From FastQC documentation:
 >#### Warning
 >A warning is raised if the sum of the deviations from the normal distribution represents more than 15% of the reads.
@@ -993,14 +1011,15 @@ From FastQC documentation:
 >#### Common reasons for warnings
 >Warnings in this module usually indicate a problem with the library. Sharp peaks on an otherwise smooth distribution are normally the result of a specific contaminant (adapter dimers for example), which may well be picked up by the overrepresented sequences module. Broader peaks may represent contamination with a different species.
 
- Let's take a look at out file1:
-
-![Alt](https://github.com/jshleap/CristescuLab_misc/raw/master/Tutorials/NGS_QC/files/file1_R1_fastqc/Images/per_sequence_gc_content.png)
-
-#### How would you explain the two modes (double peak)?
-
 ## Per base N content
-Some sequencer technologies would produce an N when it cannot define which of the four bases it has confidence on based on the phenogram. Illumina does not produce this, and therefore the plot should be flat and the module should always pass.
+Some sequencer technologies would produce an N when it cannot define which of 
+the four bases it has confidence on based on the phenogram. Illumina does not 
+produce this, and therefore the plot should be flat and the module should 
+always pass.
+
+Good Sequence            |  Bad Sequence
+:-------------------------:|:-------------------------:
+<img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/N_good.png" >  | <img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/N_bad.png">
 
 From FastQC documentation:
 >#### Warning
@@ -1008,46 +1027,252 @@ From FastQC documentation:
 >#### Failure
 >This module will raise an error if any position shows an N content of >20%.
 
-Failure or warning in this module suggest that the sequencing should probably be repeated since a significant portion of your reads have no information in them.
-
-Since our toy file is Illumina, it shows a flat line in the bottom of the figure:
-
-![per base N content](https://github.com/jshleap/CristescuLab_misc/raw/master/Tutorials/NGS_QC/files/file1_R1_fastqc/Images/per_base_n_content.png)
+Failure or warning in this module suggest that the sequencing should probably be
+repeated since a significant portion of your reads have no information in them.
 
 ## Sequence Length Distribution
-It self explanatory title describes well this module. It plots the distribution of sequence length for your reads. Illumina produces the same length throughout all the lanes, however, other sequencing platforms produce a distribution of them. This module can be safely ignore if you know that you are expecting a population of lengths in your reads. If you are using illumina and this module fails or gives you a warning, you should talk to the provider of the sequencing.
+It self explanatory title describes well this module. It plots the distribution
+of sequence length for your reads. Illumina produces the same length throughout
+all the lanes, however, other sequencing platforms produce a distribution of 
+them. This module can be safely ignore if you know that you are expecting a 
+population of lengths in your reads. If you are using illumina and this module 
+fails or gives you a warning, you should talk to the provider of the sequencing.
 
-Our dummy file (since is illumina) behaves as expected:
-
-![Length distribution of file1](https://github.com/jshleap/CristescuLab_misc/raw/master/Tutorials/NGS_QC/files/file1_R1_fastqc/Images/sequence_length_distribution.png)  
+Good Sequence            |  Bad Sequence
+:-------------------------:|:-------------------------:
+<img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/lenght_good.png" >  | <img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/lenght_bad.png">
 
 ## Sequence Duplication Levels
-This module allows you to see the level of duplication of your library. Ideally, the blue (total sequences) and the red (deduplicated sequences) should match. This would mean that you had a diverse library, and that each sequence has been sequenced in the proper depth. However, this assumes that you are working with a genome of single species, and therefore the warnings and failures of this module should only be worrysome then, since it will show a bias (i.e. PCR artefacts, resequencing parts of genome). In enriched libraries, you would expect some level of duplication, especially when this module only takes the first 50 bases and the first 100K sequences to run the tests. In amplicon sequencing, we expect some degree of duplication, and we should not be too agressive in cleaning this up.
+This module allows you to see the level of duplication of your library. Ideally, 
+the blue (total sequences), and the red (deduplicated sequences) should match. 
+This would mean that you had a diverse library, and that each sequence has been
+sequenced in the proper depth. However, this assumes that you are working with 
+a genome of single species, and therefore the warnings and failures of this 
+module should only be worrysome then, since it will show a bias (i.e. PCR 
+artefacts, resequencing parts of genome). In enriched libraries, you would 
+expect some level of duplication, especially when this module only takes the 
+first 50 bases and the first 100K sequences to run the tests. 
+
+Good Sequence            |  Bad Sequence
+:-------------------------:|:-------------------------:
+<img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/dup_good.png" >  | <img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/dup_bad.png">
 
 From FastQC docs:
 
 >#### Warning
->This module will issue a warning if non-unique sequences make up more than 20% of the total.
->#### FailureThis module will issue a error if non-unique sequences make up more than 50% of the total.
-In our file, we get:
-
-![Dupication levels](https://github.com/jshleap/CristescuLab_misc/raw/master/Tutorials/NGS_QC/files/file1_R1_fastqc/Images/duplication_levels.png)
-
-#### Explain the figure above
+>This module will issue a warning if non-unique sequences make up more than 20%
+> of the total.
+>#### Failure
+>This module will issue a error if non-unique sequences make up more than 50% 
+> of the total.
 
 ## Overrepresented sequences
-This cool module shows you sequences that are present in over 0.1% of your total reads. The coolest thing about it is that it will run a search for common contaminants and report them. In a single species, diverse, uncontaminated library, you should expect not to have any overrepresented library.
+This cool module shows you sequences that are present in over 0.1% of your total
+reads. The coolest thing about it is that it will run a search for common 
+contaminants and report them. In a single species, diverse, uncontaminated 
+library, you should expect not to have any overrepresented library.
 
-Check your copy of the overrerpesented sequences in the html file. Here is a screenshot of the first par:
-![Overrepresented sequences for file1](https://github.com/jshleap/CristescuLab_misc/raw/master/Tutorials/NGS_QC/images/overrepresented.png)
+Good Sequence            |  Bad Sequence
+:-------------------------:|:-------------------------:
+<img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/overrep_good.png" >  | <img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/overrep_bad.png">
 
-#### What can you tell me about it? How would you check if is OK or not? Do it!!!Overrepresented sequences
 
 ## Adapter Content
-Another self-explanatory module. Here, the most commonly used adapters are screened for. They are mostly illumina adapters (Universal, Small 3' RNA, Small 5' RNA, Nextera) and SOLiD small RNA adapter. From the docs:
->Any library where a reasonable proportion of the insert sizes are shorter than the read length will trigger this module. This doesn't indicate a problem as such - just that the sequences will need to be adapter trimmed before proceeding with any downstream analysis.
- 
- In our file:
- ![enter image description here](https://github.com/jshleap/CristescuLab_misc/raw/master/Tutorials/NGS_QC/files/file1_R1_fastqc/Images/adapter_content.png)
+Another self-explanatory module. Here, the most commonly used adapters are 
+screened for. They are mostly illumina adapters (Universal, Small 3' RNA, Small
+5' RNA, Nextera) and SOLiD small RNA adapter. 
+
+Good Sequence            |  Bad Sequence
+:-------------------------:|:-------------------------:
+<img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/adapter_good.png" >  | <img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/adapter_bad.png">
+
+
+From the docs:
+>Any library where a reasonable proportion of the insert sizes are shorter than
+>the read length will trigger this module. This doesn't indicate a problem as 
+>such - just that the sequences will need to be adapter trimmed before 
+>proceeding with any downstream analysis.
 
 ### Generating a report for your files
+Let's generate the report with your own files, and try to make sense of them
+now that you know what each one means.
+
+# Trimming and adapter removal with Trimmomatic
+As we saw in the previous session, we often need to remove non-biological sequences,
+such adapters, from our reads before analyses. Also, checking your reports, you 
+might have seen that you required to remove sequences or to trim low quality edges.
+This can be done with many programs such as [Trimmomatic](https://github.com/timflutre/trimmomatic)
+or [CutAdapt](https://cutadapt.readthedocs.io/en/stable/guide.html). I prefer the
+latter as is more versitile and allows you more tailoring. However, we will focus
+on Trimmomatic as is very easy to use, is widely adopted, and most RNA-Seq 
+pipelines use it.
+
+## Introduction to Trimmomatic
+This program does adaptive quality trimming, head and tail crop, and adaptor 
+removal. You can check the documentation and download the program [here](
+http://www.usadellab.org/cms/index.php?page=trimmomatic). One of the advantages
+of trimmomatic is that it allows you to work with pair end sequences, retaining 
+only matching pairs. Another advantage is that it allows partial and overlapping
+matches for the searching of adapters. Before we run the program, let's check at
+some of the options.
+
+## Understanding Trimmomatic options
+Here I am going to focus in pair-end reads, but it also works in single end:
+### Efficiency and format flags
+This flags go before the invocation of the output/input files:
+ 1. `-threads`: this flag modifies the number of cpu threads that trimmomatic 
+    should use in the computations. A typical laptop computer have about 2 cores 
+    which should amount to 4 available threads.
+ 2. `[-phred33 | -phred64]`: this flags tells trimmomatic the encoding of the 
+    file (see [above](#encoding))
+ 
+### Change encoding option
+If you want to read your file in one encoding and output it in a different one,
+this options are the ones you need to use:
+- TOPHRED33: Convert quality scores to Phred-33
+- TOPHRED64: Convert quality scores to Phred-64
+This options (and all the following on CAPS) must go after the input/output 
+  files.
+
+### Cropping
+Trimmomatic has several options that can be use simultaneously or not:
+-   LEADING: Cut bases off the start of a read, if below a threshold quality
+-   TRAILING: Cut bases off the end of a read, if below a threshold quality
+-   CROP: Cut the read to a specified length
+-   HEADCROP: Cut the specified number of bases from the start of the read
+
+LEADING and TRAILING are adaptive cropping. That means that they will cut your 
+read's head and/or tail if they fail the specified quality. This differs from 
+CROP and HEADCROP, which would cut at an specified length or specified number 
+of bases respectively. For the latter two, the program will perform the cropping
+for all reads.
+
+### Adaptive length filtering
+Trimmomatic has the option MINLEN which will drop reads that fall under the 
+specified length:
+- MINLEN: Drop the read if it is below a specified length
+
+Say that you have sequences from Illumina, all made up of 150 bp. After quality
+trimming, you might end up with some being shorther than 70, others greater than
+100, etc. You can set MINLEN, such that every sequence that falls under that
+value threhold is dropped from your dataset.
+
+### Adaptive quality trimming
+The SLIDINGWINDOW option allows you to trimm reads based on their average 
+quality in a window:
+
+- SLIDINGWINDOW: Perform a sliding window trimming, cutting once the average 
+  quality within the window falls below a threshold.
+
+It takes two values like `SLIDINGWINDOW:4:15` which means  "Scan the read with 
+a 4-base wide sliding window, cutting when the average quality per base drops 
+below 15"
+
+### Adapter trimming
+Finally, trimmomatic will take a file with the sequences of your adapters and 
+will trimm them out. It follows the following call: 
+`ILLUMINACLIP:<fastaWithAdaptersEtc>:<seed mismatches>:<palindrome clip
+threshold>:<simple clip threshold>`. 
+
+From Trimmomatic's documentation:
+> - fastaWithAdaptersEtc: specifies the path to a fasta file containing all the adapters,
+PCR sequences etc. The naming of the various sequences within this file determines
+how they are used. See the section below or use one of the provided adapter files
+> - seedMismatches: specifies the maximum mismatch count which will still allow a full
+match to be performed.
+>- palindromeClipThreshold: specifies how accurate the match between the two 'adapter
+ligated' reads must be for PE palindrome read alignment.
+>- simpleClipThreshold: specifies how accurate the match between any adapter etc.
+sequence must be against a read.
+
+<img src="https://raw.githubusercontent.com/CristescuLab/Tutorials/master/NGS_QC/images/trimmomatic_adapter.png" width="650" height="500">
+
+As can be seen in the figure, there are 4 possible scenarios that trimmomatic 
+cover:
+
+<ol type="A">
+<li>Technical sequence is completely covered by the read and therefore a simple
+alignment will identify it.</li>
+<li>Only a partial match between the technical sequence and the read, and 
+therefore a short alignment is needed.
+</li>
+<li>Both pairs are tested at once, hence allowing for "is thus much more 
+reliable than the short alignment in B, and allows adapter read-though to be 
+detected even when only one base of the adapter has been sequenced."</li>
+<li>Similar to C</li>
+</ol>
+
+
+The `palindrome clip
+threshold` essentially tells how accurate the alignment of the adapters must be. This is the log10 probability against getting a match by random chance, and therefore values around 30 are recommended 
+
+## Working with Trimmomatic
+To run trimmomatic in any terminal, you have to:
+
+```commandline
+java -jar <path to trimmomatic.jar> PE [-threads <threads>] [-phred33 | -phred64] [-trimlog <logFile>] <input 1> <input 2> <paired output 1> <unpaired output 1> <paired output 2> <unpaired output 2> <OPTIONS>
+```
+As you can see you need java to be able to run this program.
+
+### Trimmomatic in Compute Canada Clusters
+If you are trying to run trimmomatic in Compute Canada systems, we have to first 
+load an apropriate version through our modules. So first let's check the availability:
+
+```commandline
+module spider trimmomatic
+```
+
+as in February 2021, this will render:
+```angular2html
+---------------------------------------------------------------------------------------------------------------------------
+  trimmomatic:
+---------------------------------------------------------------------------------------------------------------------------
+    Description:
+      Trimmomatic performs a variety of useful trimming tasks for illumina paired-end and single ended data.The selection
+      of trimming steps and their associated parameters are supplied on the command line. 
+
+     Versions:
+        trimmomatic/0.36
+        trimmomatic/0.39
+
+---------------------------------------------------------------------------------------------------------------------------
+  For detailed information about a specific "trimmomatic" package (including how to load the modules) use the module's full name.
+  Note that names that have a trailing (E) are extensions provided by other modules.
+  For example:
+
+     $ module spider trimmomatic/0.39
+---------------------------------------------------------------------------------------------------------------------------
+```
+
+When we query the specific version, it tells us that the only requirement is 
+`StdEnv/2020` (***NOTE: This is ONLY for Compute Canada users and may vary***)
+
+When we load `trimmomatic/0.39` we obtain:
+
+```
+module load trimmomatic/0.39
+To execute Trimmomatic run: java -jar $EBROOTTRIMMOMATIC/trimmomatic-0.39.jar
+```
+
+This command tells us how to execute our Trimmomatic run. So say that you have
+a pair of fastq files named `sample1.R1.fastq.gz` and `sample1.R2.fastq.gz`, and 
+you want your outputs to sent to `sample1.trimmed.R1.fastq.gz` and 
+`sample1.trimmed.R2.fastq.gz`. You also want to run in on a SLURM cluster (like
+the ones in Compute Canada) using 32 cpus. You also want to remove the last 10bp
+of your 100bp reads and any trailing and leading base pairs that fall below a 
+quality score of 25. Additionally, you want to scan your reads on a sliding window
+of size 10 and cut is the average quality drops below 20. You can create your 
+submission script like this:
+
+```commandline
+#!/bin/bash                       
+#SBATCH --account=def-someuser  #<-- this is the account of the PI
+#SBATCH --time=0-1:00:00        #<-- you need to provide the expected time (dd-hh:mm-ss)
+#SBATCH --cpus-per-task=32      #<-- Here is where you put the number of cpus you want
+#SBATCH --mem=125               #<-- Amount of memory. In this case reserve all memory
+
+module load StdEnv/2020 trimmomatic/0.39
+java -jar $EBROOTTRIMMOMATIC/trimmomatic-0.39.jar
+```
+
+## Trimming your reads
