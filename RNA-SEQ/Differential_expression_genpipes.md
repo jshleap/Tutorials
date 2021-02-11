@@ -72,11 +72,11 @@ Using GenPIPES on compute canada
 Running GenPIPEs on your data (Assignment)
 -->
 
-## Intro
-### Unix generalities
+# Intro
+## Unix generalities
 This tutorial expect you to be more or less comfortable in the terminal. Let's just
 touch up on a few things:
-#### Connecting to a remote server
+### Connecting to a remote server
 On unix-like systems we can use the secure shell command `ssh` to connect to a 
 remote server. In the terminal we can:
 ```bash
@@ -98,7 +98,7 @@ session:
 
 ![MobaxtermX11](https://github.com/jshleap/Tutorials/blob/main/images/800px-MobaXterm_X11.png?raw=true)
 
-#### Moving files from and to a remote server
+### Moving files from and to a remote server
 There are multiples ways to copy files from and to a remote server. One useful 
 one is the rsync command, which allows you to also move only files and folder that
 are not up to date in the destination. In unix like systems the general command
@@ -128,7 +128,7 @@ In MobaXterm, you have a sidebar for sftp where you can drag and drop your files
 
 ![sftp](https://mobaxterm.mobatek.net/img/moba/features/feature-sftp-browser.png)
 
-#### Creating folders, files, and moving around a unix server
+### Creating folders, files, and moving around a unix server
 Just a brief mention of how you can create a folder and move around a unix system.
 Say you just connected to the cluster (i.e. Graham) and want to create a folder
 in your home call test. You can do this by:
@@ -176,7 +176,7 @@ use nano, you simply type `nano` in the terminal, and a blank space will show up
 
 ![Nano](https://github.com/jshleap/Tutorials/blob/main/images/Nano.png?raw=true)
 
-#### Downloading files from the web
+### Downloading files from the web
 There are many unix commands to download files from the web. Two of the most
 popular are [curl](https://github.com/curl/curl) and [wget](
 https://www.gnu.org/software/wget/). I'll focus on the latter. Wget allows you
@@ -201,7 +201,7 @@ man wget
 but their explanation is out of the scope of this tutorial.
 
 
-##### Filesystem structure in Compute Canada
+#### Filesystem structure in Compute Canada
 ***If you are not using Compute Canada, you might skip this intermission.***
 
 Most of Compute Canada resources (i.e. Graham, Beluga and Cedar) have 3 filesystem
@@ -213,7 +213,7 @@ spaces:
    every 60 days). Is intended for computation and storage of intermediate files
    during a run
    
-### Submitting jobs with SLURM scheduler
+## Submitting jobs with SLURM scheduler
 Compute Canada systems (along with many other HPC systems) have a [SLURM](
 https://slurm.schedmd.com/documentation.html) scheduler. This is required since
 HPC systems are clusters of interconnected computers and with many users a queue
@@ -379,7 +379,7 @@ fastq  ~/test/right.norm.fq
 In this case the program (`fastq`) does not require too much memory (hence the 
 `mem=4G`) and time (hence the 5 minutes).
 
-#### Checking your job status with SLURM
+### Checking your job status with SLURM
 Slurm has a command to tell you how busy the cluster is, and what is the status
 of your job, is called `squeue`. If you cast squeue without any options it will
 list all users that have submitted a job. However, you can narrow the search to
@@ -409,7 +409,7 @@ the status (`st`), the requested resources (time, nodes, cpus, other resources,
 memory), the name of the nodes (if running), and the reason why it hasn't started 
 (if it hasn't). The status can be Running (R), pending (PD), and clearing (C).
 
-#### Getting an interactive shell
+### Getting an interactive shell
 Oftentimes you want to test or run a job that is shorter or that is not very 
 resource intensive. For those cases is better to ask for a interactive shell. 
 An interactive shell is basically an allocation of a compute node that you can 
@@ -438,7 +438,7 @@ interactive shell like this:
 salloc -A def-jshleap --mem=10G --cpus-per-task=8 --time=00-02:00:00
 ```
 
-#### SLURM environmental variables
+### SLURM environmental variables
 Unix systems already have a lot environmental variables that can be useful, you
 can check a non-comprehensive list [here](https://www.guru99.com/linux-environment-variables.html).
 Likewise, inside an slurm job there is a series of environmental variables that
@@ -457,7 +457,7 @@ you can use in your script:
 
 For a more comprehensive list, check the slurm manual [here](https://slurm.schedmd.com/sbatch.html).
 
-### Principles of RNA-Seq
+## Principles of RNA-Seq
 RNA-Seq or RNA sequencing is a molecular technique focused in obtaining  a 
 collection of RNA molecules (often refer to as library) from a set of samples.
 Often the downtream bioinformatic process of analysing and comparing said libraries
@@ -481,7 +481,7 @@ was created in the laboratory. This tutorial assumes that you are already famili
 with the process from total RNA to cDNA library construction and we will focus
 on what happes from sequencing to dowtream analyses.
 
-#### Illumina sequencing of cDNA
+### Illumina sequencing of cDNA
 To generate the cDNA library, the most common protocol uses tagmentation. In brief,
 you fragment you total (or rRNA depleted) RNA and reverse transcribed using primer
 that contains a known tagging sequence in the 5' end, and a random hexamer sequence
@@ -588,12 +588,12 @@ expression. That can be summarizeed in 4 main steps:
    ![figure](https://galaxyproject.github.io/training-material/topics/transcriptomics/images/rna-seq-viz-with-volcanoplot/volcanoplot.png)
    <sup>Image from https://training.galaxyproject.org/training-material/topics/transcriptomics/tutorials/rna-seq-viz-with-volcanoplot/tutorial.html
 
-## Quality control check with FASTQC
-### Before we start: File formats
+# Quality control check with FASTQC
+## Before we start: File formats
 Before we start with the actual analysis, we need to understand the file formats
 that we will be working with. On bioinformatics there are two main sequence
 formats (Fastq and Fasta) and two main mapping formats (BAM and SAM).
-#### Simple sequence formats: Fasta and Fastq
+### Simple sequence formats: Fasta and Fastq
 Before the advent of next generation sequencing (NGS) technologies, most sequence
 data was stored in a simple sequence file called a FAST**A** file. Fasta files
 contain a header, with information about the sequence, and the sequence:
@@ -656,7 +656,7 @@ But what does a quality score means? It s related to the probability of an error
 As a rule of thumb a Phred score above 20 (99% chances to be right) is considered 
 acceptable and above 30 (99.9% chances to be right) as good.
 
-### Working with FASTQC
+## Working with FASTQC
 I have shown several examples working with `fastqc`. In this section I will walk
 you through some options, starting with getting help: 
 
@@ -874,7 +874,7 @@ Finally, the `--dir` option allows you to write temporary files in a different
 location than the default `/tmp`. This is important when you know that the 
 temporary directory is too small.
 
-### Understanding the report
+## Understanding the report
 As a test, let's run FastQC on the fastq file `right.norm.fq` downloaded earlier.
 Let's assume that we want to not extract the contents, use kmers of size 5, use
 the SLURM temporary directory to write the temporary files and to not group bases,
@@ -892,7 +892,7 @@ the quality of your reads. If the sequences pass the (mostly rules of thumb)
 statiscics, you will see a checkmark next to the module, otherwise an X (all
 subsequent plots were optained from https://www.bioinformatics.babraham.ac.uk/projects/fastqc/):
 
-#### Basic Statistics
+### Basic Statistics
 This just gives you some basic information about your reads, like name, encoding,
 type of file, number of sequences, poor quality ones, lenght, and GC content:
 
@@ -900,7 +900,7 @@ Good Sequence            |  Bad Sequence
 :-------------------------:|:-------------------------:
 <img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/Basic_good.png" >  | <img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/Basic_bad.png">
 
-#### Per base sequence quality
+### Per base sequence quality
 Its name is self-explanatory: this module evaluates the quality at each base 
 for a sample of the reads reads. FastQC gives you a box plot of the qualities, 
 representing the inter-quartile range (25-75%) (yellow box), the extremes 10 
@@ -913,17 +913,15 @@ Good Sequence            |  Bad Sequence
 
 From the documentation of this module:
 
->Warning
-> 
+>##### Warning
 >A warning will be issued if the lower quartile for any base is less than 10, 
 > or if the median for any base is less than 25.
 >
->Failure
-> 
+>##### Failure
 >This module will raise a failure if the lower quartile for any base is less 
 > than 5 or if the median for any base is less than 20.
 
-## Per tile sequence quality
+### Per tile sequence quality
 This a feature that is exclusive to Illumina technologies. Their flow cells 
 typically have 8 lanes,with 2 columns and 50 tiles:
 
@@ -943,20 +941,26 @@ Good Sequence            |  Bad Sequence
 Not the best quality, but there is no systematic bias... we might be able to fix this with some quality trimming.
 
 From FastQC documentation:
-> #### Warning
+> ##### Warning
 > This module will issue a warning if any tile shows a mean Phred score more than 2 less than the mean for that base across all tiles.
-> #### Failure
+> ##### Failure
 > This module will issue a warning if any tile shows a mean Phred score more than 5 less than the mean for that base across all tiles.
 
-## Per sequence quality scores
+### Per sequence quality scores
 
-This module allows you to explore if a significant portion of your reads are of poor quality. Often times warnings occur when your sequence is shorter than your read length, and therefore the end of reads (or the end of the flowcell) is of poor quality.
+This module allows you to explore if a significant portion of your reads are of
+poor quality. Often times warnings occur when your sequence is shorter than 
+your read length, and therefore the end of reads (or the end of the flowcell) 
+is of poor quality.
+
 
 From FastQC documentation:
->#### Warning
->A warning is raised if the most frequently observed mean quality is below 27 - this equates to a 0.2% error rate.
->#### Failure
->An error is raised if the most frequently observed mean quality is below 20 - this equates to a 1% error rate.
+>##### Warning
+>A warning is raised if the most frequently observed mean quality is below 27 -
+> this equates to a 0.2% error rate.
+>##### Failure
+>An error is raised if the most frequently observed mean quality is below 20 - 
+> this equates to a 1% error rate.
 
 
 This is the case for our File1:
