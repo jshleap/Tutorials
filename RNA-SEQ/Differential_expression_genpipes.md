@@ -21,7 +21,6 @@ Table of Contents
   * [Unix generalities](#unix-generalities)
   * [Principles of RNA-seq](#principles-of-rna-seq)
   * [RNA-seq standard analysis](#rna-seq-standard-analysis)
-  * [Show and tell](#show-and-tell) 
 
 * [Quality control check with FASTQC](#quality-control-check-with-fastqc)
   *[Before we start: File formats](#before-we-start-file-formats)
@@ -471,8 +470,9 @@ expression between two treatments of conditions.
 
 <p align="center">
   <img src="https://github.com/jshleap/Tutorials/blob/main/images/RNA_seq.png?raw=true"><br>
-  <b>Image by Malachi Griffith, Jason R. Walker, Nicholas C. Spies, Benjamin J. 
-Ainscough, Obi L. Griffith - http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004393, CC BY 2.5, https://commons.wikimedia.org/w/index.php?curid=53055894</b>
+  <sup>Image by <a href="http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004393, CC BY 2.5, https://commons.wikimedia.org/w/index.php?curid=53055894"> 
+Malachi Griffith, Jason R. Walker, Nicholas C. Spies, Benjamin J. Ainscough, 
+Obi L. Griffith</a></sup>
 </p>
  
 Most often the transcriptome sequencing is done on short fragment technologies
@@ -491,7 +491,7 @@ amplified, adding Illumina adapters and barcodes:
 
 <p align="center">
   <img src="https://media.springernature.com/full/springer-static/image/art%3A10.1038%2Fnmeth.f.355/MediaObjects/41592_2012_Article_BFnmethf355_Fig1_HTML.jpg?as=webp"><br>
-   <a href="https://doi.org/10.1038/nmeth.f.355"> from https://doi.org/10.1038/nmeth.f.355</a>
+  <sup> Courtesy of <a href="https://doi.org/10.1038/nmeth.f.355"> https://doi.org/10.1038/nmeth.f.355</a></sup>
 </p>
 
 This is important for downstream analyses, since it gives us information about
@@ -507,20 +507,20 @@ the Illumina adapters.
 
 <p align="center">
   <img src="https://www.hackteria.org/wiki/images/a/a5/FlowCell.jpg"><br>
-  <b>taken from https://www.hackteria.org/wiki/HiSeq2000_-_Next_Level_Hacking</b>
+  <sup> taken from <a href="https://www.hackteria.org/wiki/HiSeq2000_-_Next_Level_Hacking"> www.hackteria.org/wiki/HiSeq2000_-_Next_Level_Hacking</a></sup>
 </p>
 
 The cDNA library you have created "flows" within the flow cell and the cDNA
 fragments attach to the wells by affinity between the anchors and the adaptors
-attached to the RNA fragments during the tagmentation process. This creates a bridge
-between both ends (reverse and forward adaptors) that allows the polymerase to
-generate the new fragment in both ways, essentially generating the forward (often 
-called R1 in the resulting files) and reverse (often called R2 in the resulting 
-files) reads of the target cDNA:
+attached to the RNA fragments during the tagmentation process. This creates a 
+bridge between both ends (reverse and forward adaptors) that allows the 
+polymerase to generate the new fragment in both ways, essentially generating 
+the forward (often called R1 in the resulting files) and reverse (often called 
+R2 in the resulting files) reads of the target cDNA:
 
 <p align="center">
   <img src="https://upload.wikimedia.org/wikipedia/commons/6/65/Cluster_Generation.png"><br>
-  <b>author: https://commons.wikimedia.org/w/index.php?title=User:DMLapato&action=edit&redlink=1</b>
+  <sup>author: <a href="https://commons.wikimedia.org/w/index.php?title=User:DMLapato&action=edit&redlink=1"> DMLapato </a></sup>
 </p>
 
 After the sequencing process, you will receive a pair (or more) files with your
@@ -540,7 +540,7 @@ most common scenario, I am not going to go into details.
 ### RNA-seq standard analysis
 <p align="center">
   <img src="https://rna-seqblog.com/wp-content/uploads/2016/02/typical.jpg"><br>
- <b> from https://rna-seqblog.com/review-of-rna-seq-data-analysis-tools/ </b>
+  <sup>from <a href="https://rna-seqblog.com/review-of-rna-seq-data-analysis-tools/"> rna-seqblog.com/review-of-rna-seq-data-analysis-tools</a></sup>
 </p>
 
 The steps in the figure above show the standard analysis for differential 
@@ -557,8 +557,8 @@ expression. That can be summarizeed in 4 main steps:
    thresholds, we need to trimm our reads. During this process we will remove all
    non-biological sequences (i.e. adapters, barcodes, etc) as well as low quality
    reads. We will cover this in detail in the section [Trimming and adapter removal with Trimmomatic](#trimming-and-adapter-removal-with-trimmomatic).
-   ![report](https://github.com/jshleap/Tutorials/raw/main/images/report.jpg)
-   *Image from http://cgga.org.cn:9091/gliomasdb/images/figure_1.jpg*
+   ![report](https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/report.jpg)
+   <sup>Image from http://cgga.org.cn:9091/gliomasdb/images/figure_1.jpg
 
 
 2. Alignment and Assembly: Since we sheared our transcriptome, we now have little 
@@ -569,7 +569,7 @@ expression. That can be summarizeed in 4 main steps:
    Once we know where each reads go relative to the reference genome (mapping),
    we can piece together our transcriptome (assembly).
    ![mapping](https://home.cc.umanitoba.ca/~frist/PLNT7690/lec12/MapVsAssemble.png)
-   *Image from http://jura.wi.mit.edu/bio/education/hot_topics/RNAseq/RNA_Seq.pdf*
+   <sup>Image from http://jura.wi.mit.edu/bio/education/hot_topics/RNAseq/RNA_Seq.pdf
 
    
 3. Analysis: In this step we need to quantify and compare abundances of transcripts
@@ -578,7 +578,7 @@ expression. That can be summarizeed in 4 main steps:
    transcripts produced) on your base or control condition vs your treatment or
    experimental condition.
    ![DE](https://hbctraining.github.io/DGE_workshop/img/de_theory.png)
-   *Image credit: Paul Pavlidis, UBC*
+   <sup>Image credit: Paul Pavlidis, UBC
    
 
 4. PostProcessing (not in the figure): Visualizing your results and generating 
@@ -586,7 +586,7 @@ expression. That can be summarizeed in 4 main steps:
    and is easier to do it visualy. In the postprocessing step, you can generate
    figures and summaries of these results.
    ![figure](https://galaxyproject.github.io/training-material/topics/transcriptomics/images/rna-seq-viz-with-volcanoplot/volcanoplot.png)
-   *Image from https://training.galaxyproject.org/training-material/topics/transcriptomics/tutorials/rna-seq-viz-with-volcanoplot/tutorial.html*
+   <sup>Image from https://training.galaxyproject.org/training-material/topics/transcriptomics/tutorials/rna-seq-viz-with-volcanoplot/tutorial.html
 
 ## Quality control check with FASTQC
 ### Before we start: File formats
@@ -599,8 +599,7 @@ data was stored in a simple sequence file called a FAST**A** file. Fasta files
 contain a header, with information about the sequence, and the sequence:
 
 ![fasta](https://www.researchgate.net/profile/Morteza_Hosseini17/publication/309134977/figure/fig1/AS:417452136648705@1476539753111/A-sample-of-the-Multi-FASTA-file_W640.jpg)
-
-*from DOI: 10.3390/info7040056*
+<br><sup>from DOI: https://doi.org/10.3390/info7040056
 
 Fasta files can be multiline (as above), where the sequence is broken down into
 lines, or single line. The multiline fasta files is by far the most common. The
@@ -617,8 +616,7 @@ and the FAST**Q** file was born. Since the earlier NGS technologies only produce
 short reads, fastq files sequence and qualities are represented in a single line:
 
 ![fastq](https://www.researchgate.net/profile/Reinhard_Schneider2/publication/256095540/figure/fig7/AS:298005665206280@1448061495472/FASTQ-file-1st-line-always-starts-with-the-symbol-followed-by-the-sequence.png)
-
-*from https://www.researchgate.net/publication/256095540_1756-0381-6-13*
+<br><sup>from https://www.researchgate.net/publication/256095540_1756-0381-6-13
 
 The fastq files' header starts with an @ symbol, followed by the sequence identifyer
 (often represents the techonology used, the lane, and other information). The next
@@ -635,8 +633,7 @@ the most popular are Sanger, Solexa, Ilumina 1.3+, Illumina 1.5+, and illumina
 given base call:
 
 ![phred](https://github.com/CristescuLab/Tutorials/raw/master/NGS_QC/images/fastq_phread-base.png)
-
-*from https://en.wikipedia.org/wiki/FASTQ_format#Encoding*
+<br><sup>from https://en.wikipedia.org/wiki/FASTQ_format#Encoding
 
 As you can see, the point at which the quality starts (quality score of 0) is 
 mapped differently in the [ASCII table](https://en.wikipedia.org/wiki/ASCII) 
@@ -901,14 +898,152 @@ type of file, number of sequences, poor quality ones, lenght, and GC content:
 
 Good Sequence            |  Bad Sequence
 :-------------------------:|:-------------------------:
-<img src="https://github.com/jshleap/Tutorials/raw/main/images/Basic_good.png" >  | <img src="https://github.com/jshleap/Tutorials/raw/main/images/Basic_bad.png">
+<img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/Basic_good.png" >  | <img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/Basic_bad.png">
 
 #### Per base sequence quality
-This plot shows you the quality of the sequence per base:
+Its name is self-explanatory: this module evaluates the quality at each base 
+for a sample of the reads reads. FastQC gives you a box plot of the qualities, 
+representing the inter-quartile range (25-75%) (yellow box), the extremes 10 
+and 90th percentiles are represented by the whiskers, the median value by a red
+line, and the mean quality by the blue line.
 
 Good Sequence            |  Bad Sequence
 :-------------------------:|:-------------------------:
-<img src="https://github.com/jshleap/Tutorials/raw/main/images/quality_good.png" >  | <img src="https://github.com/jshleap/Tutorials/raw/main/images/quality_bad.png">
+<img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/quality_good.png" >  | <img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/quality_bad.png">
 
+From the documentation of this module:
+
+>Warning
+> 
+>A warning will be issued if the lower quartile for any base is less than 10, 
+> or if the median for any base is less than 25.
+>
+>Failure
+> 
+>This module will raise a failure if the lower quartile for any base is less 
+> than 5 or if the median for any base is less than 20.
+
+## Per tile sequence quality
+This a feature that is exclusive to Illumina technologies. Their flow cells 
+typically have 8 lanes,with 2 columns and 50 tiles:
+
+![Flow cell pattern](https://github.com/jshleap/CristescuLab_misc/raw/master/Tutorials/NGS_QC/images/illumina_flowcell.png)
+</br> <sup>Courtesy of http://zjuwhw.github.io/2016/08/13/Illumina_sequencer.html
+
+When systematic error occur in a tile, it can indicate sequencing error such as
+bubbles, smudges, or dirt. When the errors occur very sparsely and not too 
+widespread, is often OK to overlook this error. When a full lane has a problem,
+oftentimes is a sequencing error and this cannot be fixed with bioinformatics. 
+The problem can occur as as well when the flowcell is overloaded.
+
+Good Sequence            |  Bad Sequence
+:-------------------------:|:-------------------------:
+<img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/tiles_good.png" >  | <img src="https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/tiles_bad.png">
+
+Not the best quality, but there is no systematic bias... we might be able to fix this with some quality trimming.
+
+From FastQC documentation:
+> #### Warning
+> This module will issue a warning if any tile shows a mean Phred score more than 2 less than the mean for that base across all tiles.
+> #### Failure
+> This module will issue a warning if any tile shows a mean Phred score more than 5 less than the mean for that base across all tiles.
+
+## Per sequence quality scores
+
+This module allows you to explore if a significant portion of your reads are of poor quality. Often times warnings occur when your sequence is shorter than your read length, and therefore the end of reads (or the end of the flowcell) is of poor quality.
+
+From FastQC documentation:
+>#### Warning
+>A warning is raised if the most frequently observed mean quality is below 27 - this equates to a 0.2% error rate.
+>#### Failure
+>An error is raised if the most frequently observed mean quality is below 20 - this equates to a 1% error rate.
+
+
+This is the case for our File1:
+![Per sequence quality scores of File1](https://github.com/jshleap/CristescuLab_misc/raw/master/Tutorials/NGS_QC/files/file1_R1_fastqc/Images/per_sequence_quality.png)
+
+#### *Can you explain the figure above?*
+
+## Per base sequence content
+This module shows the proportion of bases in each position. In an unbiased library, the proportion of A, T, C, G, should run parallel to each other. If there is a bias, this could imply that the primers or adaptors were not remove, and therefore there would be a strong bias towards a certain composition. It could also mean that you have an over-fragmented library, creating over-represented k-mers, or a dataset that has been trimmed too aggressively. In amplicon sequencing, there tends to be biases in the composition of the given amplicon, especially when dealing with mitochondrial DNA.
+
+From FastQC documentation:
+>#### Warning
+>This module issues a warning if the difference between A and T, or G and C is greater than 10% in any position.
+>#### Failure
+>This module will fail if the difference between A and T, or G and C is greater than 20% in any position.
+
+ Let's take a look at file1:
+
+![Per sequence base content for file1](https://github.com/jshleap/CristescuLab_misc/raw/master/Tutorials/NGS_QC/files/file1_R1_fastqc/Images/per_base_sequence_content.png)
+
+#### What can you tell about this file?
+
+## Per sequence GC content
+This module intends to show the proportion of GC content in the reads. The blue line represents a theoretical distribution (Normal) of your observed data. Deviations from this theoretical distribution often implies contamination of some kind (adapter/primer dimers, multiple species in the run). FastQC assumes that you are analyzing a  single genome, and therefore will issue a warning in multispecies libraries.
+From FastQC documentation:
+>#### Warning
+>A warning is raised if the sum of the deviations from the normal distribution represents more than 15% of the reads.
+>#### Failure
+>This module will indicate a failure if the sum of the deviations from the normal distribution represents more than 30% of the reads.
+>#### Common reasons for warnings
+>Warnings in this module usually indicate a problem with the library. Sharp peaks on an otherwise smooth distribution are normally the result of a specific contaminant (adapter dimers for example), which may well be picked up by the overrepresented sequences module. Broader peaks may represent contamination with a different species.
+
+ Let's take a look at out file1:
+
+![Alt](https://github.com/jshleap/CristescuLab_misc/raw/master/Tutorials/NGS_QC/files/file1_R1_fastqc/Images/per_sequence_gc_content.png)
+
+#### How would you explain the two modes (double peak)?
+
+## Per base N content
+Some sequencer technologies would produce an N when it cannot define which of the four bases it has confidence on based on the phenogram. Illumina does not produce this, and therefore the plot should be flat and the module should always pass.
+
+From FastQC documentation:
+>#### Warning
+>This module raises a warning if any position shows an N content of >5%.
+>#### Failure
+>This module will raise an error if any position shows an N content of >20%.
+
+Failure or warning in this module suggest that the sequencing should probably be repeated since a significant portion of your reads have no information in them.
+
+Since our toy file is Illumina, it shows a flat line in the bottom of the figure:
+
+![per base N content](https://github.com/jshleap/CristescuLab_misc/raw/master/Tutorials/NGS_QC/files/file1_R1_fastqc/Images/per_base_n_content.png)
+
+## Sequence Length Distribution
+It self explanatory title describes well this module. It plots the distribution of sequence length for your reads. Illumina produces the same length throughout all the lanes, however, other sequencing platforms produce a distribution of them. This module can be safely ignore if you know that you are expecting a population of lengths in your reads. If you are using illumina and this module fails or gives you a warning, you should talk to the provider of the sequencing.
+
+Our dummy file (since is illumina) behaves as expected:
+
+![Length distribution of file1](https://github.com/jshleap/CristescuLab_misc/raw/master/Tutorials/NGS_QC/files/file1_R1_fastqc/Images/sequence_length_distribution.png)  
+
+## Sequence Duplication Levels
+This module allows you to see the level of duplication of your library. Ideally, the blue (total sequences) and the red (deduplicated sequences) should match. This would mean that you had a diverse library, and that each sequence has been sequenced in the proper depth. However, this assumes that you are working with a genome of single species, and therefore the warnings and failures of this module should only be worrysome then, since it will show a bias (i.e. PCR artefacts, resequencing parts of genome). In enriched libraries, you would expect some level of duplication, especially when this module only takes the first 50 bases and the first 100K sequences to run the tests. In amplicon sequencing, we expect some degree of duplication, and we should not be too agressive in cleaning this up.
+
+From FastQC docs:
+
+>#### Warning
+>This module will issue a warning if non-unique sequences make up more than 20% of the total.
+>#### FailureThis module will issue a error if non-unique sequences make up more than 50% of the total.
+In our file, we get:
+
+![Dupication levels](https://github.com/jshleap/CristescuLab_misc/raw/master/Tutorials/NGS_QC/files/file1_R1_fastqc/Images/duplication_levels.png)
+
+#### Explain the figure above
+
+## Overrepresented sequences
+This cool module shows you sequences that are present in over 0.1% of your total reads. The coolest thing about it is that it will run a search for common contaminants and report them. In a single species, diverse, uncontaminated library, you should expect not to have any overrepresented library.
+
+Check your copy of the overrerpesented sequences in the html file. Here is a screenshot of the first par:
+![Overrepresented sequences for file1](https://github.com/jshleap/CristescuLab_misc/raw/master/Tutorials/NGS_QC/images/overrepresented.png)
+
+#### What can you tell me about it? How would you check if is OK or not? Do it!!!Overrepresented sequences
+
+## Adapter Content
+Another self-explanatory module. Here, the most commonly used adapters are screened for. They are mostly illumina adapters (Universal, Small 3' RNA, Small 5' RNA, Nextera) and SOLiD small RNA adapter. From the docs:
+>Any library where a reasonable proportion of the insert sizes are shorter than the read length will trigger this module. This doesn't indicate a problem as such - just that the sequences will need to be adapter trimmed before proceeding with any downstream analysis.
+ 
+ In our file:
+ ![enter image description here](https://github.com/jshleap/CristescuLab_misc/raw/master/Tutorials/NGS_QC/files/file1_R1_fastqc/Images/adapter_content.png)
 
 ### Generating a report for your files
