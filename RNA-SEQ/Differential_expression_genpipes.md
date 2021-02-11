@@ -892,7 +892,8 @@ Will generate an `html` file with the report, and a zip file with the same
 report, stand alone images and raw data of the report. Let's dig in a bit more 
 into the fastq report and its contents. FastQC contains several modules that test
 the quality of your reads. If the sequences pass the (mostly rules of thumb) 
-statiscics, you will see a checkmark next to the module, otherwise an X:
+statiscics, you will see a checkmark next to the module, otherwise an X (all
+subsequent plots were optained from https://www.bioinformatics.babraham.ac.uk/projects/fastqc/):
 
 #### Basic Statistics
 This just gives you some basic information about your reads, like name, encoding,
@@ -908,5 +909,6 @@ This plot shows you the quality of the sequence per base:
 Good Sequence            |  Bad Sequence
 :-------------------------:|:-------------------------:
 <img src="https://github.com/jshleap/Tutorials/raw/main/images/quality_good.png" >  | <img src="https://github.com/jshleap/Tutorials/raw/main/images/quality_bad.png">
+
 
 ### Generating a report for your files
