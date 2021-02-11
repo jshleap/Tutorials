@@ -546,6 +546,8 @@ most common scenario, I am not going to go into details.
 The steps in the figure above show the standard analysis for differential 
 expression. That can be summarizeed in 4 main steps:
 
+
+
 1. Preprocessing: This step is very important as it weeds out noise from true 
    signal. In this step we have to analyse and visualize the quality of the raw
    data and remove low quality reads that might affect our downstream analyses.
@@ -555,8 +557,9 @@ expression. That can be summarizeed in 4 main steps:
    thresholds, we need to trimm our reads. During this process we will remove all
    non-biological sequences (i.e. adapters, barcodes, etc) as well as low quality
    reads. We will cover this in detail in the section [Trimming and adapter removal with Trimmomatic](#trimming-and-adapter-removal-with-trimmomatic).
-   ![report](http://cgga.org.cn:9091/gliomasdb/images/figure_1.jpg)
+   ![report](https://github.com/jshleap/Tutorials/raw/main/images/report.jpg)
    *Image from http://cgga.org.cn:9091/gliomasdb/images/figure_1.jpg*
+
 
 2. Alignment and Assembly: Since we sheared our transcriptome, we now have little 
    pieces, and now we have the task to reconstruct full size transcriptomes. To 
@@ -568,23 +571,22 @@ expression. That can be summarizeed in 4 main steps:
    ![mapping](https://home.cc.umanitoba.ca/~frist/PLNT7690/lec12/MapVsAssemble.png)
    *Image from http://jura.wi.mit.edu/bio/education/hot_topics/RNAseq/RNA_Seq.pdf*
 
+   
 3. Analysis: In this step we need to quantify and compare abundances of transcripts
    mapped to individual genes across treatments/conditions. We can estimate which
    genes have been upregulated (more transcripts produced) or downregulated (less
    transcripts produced) on your base or control condition vs your treatment or
    experimental condition.
    ![DE](https://hbctraining.github.io/DGE_workshop/img/de_theory.png)
-   * Image credit: Paul Pavlidis, UBC *
+   *Image credit: Paul Pavlidis, UBC*
    
+
 4. PostProcessing (not in the figure): Visualizing your results and generating 
    figures. It is important to be able to explore the results of your pipeline, 
    and is easier to do it visualy. In the postprocessing step, you can generate
    figures and summaries of these results.
    ![figure](https://galaxyproject.github.io/training-material/topics/transcriptomics/images/rna-seq-viz-with-volcanoplot/volcanoplot.png)
    *Image from https://training.galaxyproject.org/training-material/topics/transcriptomics/tutorials/rna-seq-viz-with-volcanoplot/tutorial.html*
-
-### Show and tell
-*** NOW YOU CAN TRY IT YOURSELF ***
 
 ## Quality control check with FASTQC
 ### Before we start: File formats
@@ -598,7 +600,7 @@ contain a header, with information about the sequence, and the sequence:
 
 ![fasta](https://www.researchgate.net/profile/Morteza_Hosseini17/publication/309134977/figure/fig1/AS:417452136648705@1476539753111/A-sample-of-the-Multi-FASTA-file_W640.jpg)
 
-*from DOI: 10.3390/info7040056 *
+*from DOI: 10.3390/info7040056*
 
 Fasta files can be multiline (as above), where the sequence is broken down into
 lines, or single line. The multiline fasta files is by far the most common. The
@@ -835,8 +837,9 @@ will be done on inputs with that format.
 Like with many other tools, FastQC have the ability to use many threads. This
 is important in HPC systems such as Compute Canada where you can use multiple
 threads by requesting them to the scheduler. You can pass multiple threads to 
-the `--threads` option. FastQC however, does parallization differently. It provides
-a single file per each thread that you request, so is lost on single file reports.
+the `--threads` option. FastQC however, does parallelization differently. It 
+provides a single file per each thread that you request, so is lost on single 
+file reports.
 
 A very important option that FastQC has, is the ability to provide a set of known
 contaminants. Say that you are working with humans, but in your lab, there is 
@@ -885,6 +888,20 @@ mkdir -p fastqc_results
 fastqc --kmers 5 --dir ${SLURM_TMPDIR} --noextract --nogroup \
   --outdir fastqc_results right.norm.fq
 ```
+Will generate an `html` file with the report, and a zip file with the same 
+report, stand alone images and raw data of the report. Let's dig in a bit more 
+into the fastq report and its contents. FastQC contains several modules that test
+the quality of your reads. If the sequences pass the (mostly rules of thumb) 
+statiscics, you will see a checkmark next to the module, otherwise an X:
 
-right.norm_fastqc.html  right.norm_fastqc.zip  right.norm.fq
+####Basic Statistics
+This just gives you some basic information about your reads, like name, encoding,
+type of file, number of sequences, poor quality ones, lenght, and GC content:
+
+Good Sequence            |  Solarized Ocean
+:-------------------------:|:-------------------------:
+![](https://github.com/jshleap/Tutorials/raw/main/images/Basic_good.png)  |  
+![](https://github.com/jshleap/Tutorials/raw/main/images/Basic_bad.png)
+
+
 ### Generating a report for your files
