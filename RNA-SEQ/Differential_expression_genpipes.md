@@ -1249,15 +1249,17 @@ When we query the specific version, it tells us that the only requirement is
 
 When we load `trimmomatic/0.39` we obtain:
 
-```
+```commandline
 module load trimmomatic/0.39
 To execute Trimmomatic run: java -jar $EBROOTTRIMMOMATIC/trimmomatic-0.39.jar
 ```
 
 This command tells us how to execute our Trimmomatic run. So say that you have
 a pair of fastq files named `sample1.R1.fastq.gz` and `sample1.R2.fastq.gz`, and 
-you want your outputs to sent to `sample1.trimmed.R1.fastq.gz` and 
-`sample1.trimmed.R2.fastq.gz`. You also want to run in on a SLURM cluster (like
+you want your paired outputs sent to `sample1.trimmed.R1.fastq.gz` and 
+`sample1.trimmed.R2.fastq.gz` and you unpaired outputs to 
+`sample1.trimmed_unpaired.R1.fastq.gz` and `sample1.trimmed_unpaired.R2.fastq.gz`. 
+You also want to run in on a SLURM cluster (like
 the ones in Compute Canada) using 32 cpus. You also want to remove the last 10bp
 of your 100bp reads and any trailing and leading base pairs that fall below a 
 quality score of 25. Additionally, you want to scan your reads on a sliding window
@@ -1272,7 +1274,14 @@ submission script like this:
 #SBATCH --mem=125               #<-- Amount of memory. In this case reserve all memory
 
 module load StdEnv/2020 trimmomatic/0.39
-java -jar $EBROOTTRIMMOMATIC/trimmomatic-0.39.jar
+java -jar $EBROOTTRIMMOMATIC/trimmomatic-0.39.jar PE -threads ${SLURM_CPUS_PER_TASK} \
+   sample1.R1.fastq.gz sample1.R2.fastq.gz sample1.trimmed.R1.fastq.gz sample1.trimmed_unpaired.R1.fastq.gz \
+   sample1.trimmed.R2.fastq.gz sample1.trimmed_unpaired.R2.fastq.gz CROP:10 LEADING:25 \
+   TRAILING:25 SLIDINGWINDOW:10:20
 ```
 
+And voila!
+
 ## Trimming your reads
+Now you try it on your own reads, and check back with FastQC how trimmomatic did
+and what is missing
