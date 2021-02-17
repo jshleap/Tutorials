@@ -26,20 +26,18 @@ Table of Contents
   *[Before we start: File formats](#before-we-start-file-formats)
   * [Working with FASTQC](#working-with-fastqc)
   * [Understanding the report](#understanding-the-report)
-  * [Generating a report for your files](#generating-a-report-for-your-files)
 
 * [Trimming and adapter removal with Trimmomatic](#trimming-and-adapter-removal-with-trimmomatic)
   * [Introduction to Trimmomatic](#introduction-to-trimmomatic)
   * [Understanding Trimmomatic options](#understanding-trimmomatic-options)
   * [Working with Trimmomatic](#working-with-trimmomatic)
-  * [Trimming your reads](#trimming-your-reads)
-<!---
+    
 * [Alignment and junction discovery using STAR](#alignment-and-junction-discovery-using-star)
   * [Understanding STAR options: Generating indices](#understanding-star-options-generating-indices)
   * [Understanding STAR options: Mapping](#understanding-star-options-mapping)
   * [Working with STAR](#working-with-star)
   * [Generating your indices and your mapping](#Generating your indices and your mapping)
-
+<!---
 * [Cleaning the alignment with Picard](#cleaning-the-alignment-with-picard)
   * [Introduction to picard (only the relevant parts as this is a very big tool)](#introduction-to-picard-only-the-relevant-parts-as-this-is-a-very-big-tool)
   * [Understanding picard’s markduplicates](#understanding-picards-markduplicates)
@@ -893,7 +891,7 @@ report, stand alone images and raw data of the report. Let's dig in a bit more
 into the fastq report and its contents. FastQC contains several modules that test
 the quality of your reads. If the sequences pass the (mostly rules of thumb) 
 statiscics, you will see a checkmark next to the module, otherwise an X (all
-subsequent plots were optained from https://www.bioinformatics.babraham.ac.uk/projects/fastqc/):
+subsequent plots were obtained from https://www.bioinformatics.babraham.ac.uk/projects/fastqc/):
 
 ### Basic Statistics
 This just gives you some basic information about your reads, like name, encoding,
@@ -1271,7 +1269,7 @@ submission script like this:
 #SBATCH --account=def-someuser  #<-- this is the account of the PI
 #SBATCH --time=0-1:00:00        #<-- you need to provide the expected time (dd-hh:mm-ss)
 #SBATCH --cpus-per-task=32      #<-- Here is where you put the number of cpus you want
-#SBATCH --mem=125               #<-- Amount of memory. In this case reserve all memory
+#SBATCH --mem=125G              #<-- Amount of memory. In this case reserve all memory
 
 module load StdEnv/2020 trimmomatic/0.39
 java -jar $EBROOTTRIMMOMATIC/trimmomatic-0.39.jar PE -threads ${SLURM_CPUS_PER_TASK} \
@@ -1282,6 +1280,124 @@ java -jar $EBROOTTRIMMOMATIC/trimmomatic-0.39.jar PE -threads ${SLURM_CPUS_PER_T
 
 And voila!
 
-## Trimming your reads
-Now you try it on your own reads, and check back with FastQC how trimmomatic did
-and what is missing
+
+# Alignment and junction discovery using STAR
+Now that we have our reads clean, we need to reconstruct our transcripts. Since
+the RNA-seq strategy with illumina involves shearing our DNA into smaller
+sequentiable bits, now we need to stich them back toguether. There are two options
+for doing this: De-novo and reference alignment. In here we will focus in the latter
+since is more accurate. The first thing we want to do is to align our reads to 
+a reference genome. There are many software available, but here we will be using 
+[STAR](https://github.com/alexdobin/STAR) (Spliced Transcripts Alignment to a 
+Reference). This software is specifically designed to work with RNA-seq data, 
+taking into account spliced variants.
+
+### STAR Strategy
+STAR is faster and more accurate than other RNA-Seq alignment software, but it 
+often requires a significant ammount of memory. 
+
+STAR has a two-step process: Seeding and reconstructing.
+
+#### Seeding
+1. longest exact match or Maximal Mappable Prefixes (MMPs):
+   
+    ![alt](https://hbctraining.github.io/Intro-to-rnaseq-hpc-O2/img/alignment_STAR_step1.png)
+    <br><sup>from https://en.wikipedia.org/wiki/FASTQ_format#Encoding
+   
+2. Next MMPs or seed 2 from the unmapped part of the read:
+   
+    ![alt](https://hbctraining.github.io/Intro-to-rnaseq-hpc-O2/img/alignment_STAR_step2.png)
+    <br><sup>from https://en.wikipedia.org/wiki/FASTQ_format#Encoding
+
+3. If sub-step 2 does not find an exact matching seed 1 gets extended:
+
+    ![alt](https://hbctraining.github.io/Intro-to-rnaseq-hpc-O2/img/alignment_STAR_step3.png)
+    <br><sup>from https://en.wikipedia.org/wiki/FASTQ_format#Encoding
+   
+4. If extension does not align well it will be softclipped:
+
+    ![alt](https://hbctraining.github.io/Intro-to-rnaseq-hpc-O2/img/alignment_STAR_step4.png)
+    <br><sup>from https://en.wikipedia.org/wiki/FASTQ_format#Encoding
+
+#### Reconstructing
+1. Seeds are clustered by proximity using anchor seeds (seeds that do not map
+   to multiple sites)
+2. The clustered seeds are "stiched" toguether based on the alignment and scoring
+
+    ![alt](https://hbctraining.github.io/Intro-to-rnaseq-hpc-O2/img/alignment_STAR_step5.png)
+    <br><sup>from https://en.wikipedia.org/wiki/FASTQ_format#Encoding
+
+## Understanding STAR options: Generating indices
+Indices are generated to make the accessing of particular regions of the reference
+genome faster. Think about it as the index of a book: if you are looking for
+something in particular within the book, it is faster to have a page with themes
+and the page to where that theme can be found, that skimming the whole book until
+you find it.
+In the same way many mapping software first require to index the genome for 
+efficiency purposes. 
+
+In STAR, the basic options to generate genome indices are:
+
+```
+--runThreadN: number of threads
+--limitGenomeGenerateRAM: maximum available RAM (bytes) for genome generation
+--runMode: genomeGenerate mode
+--genomeDir: /path/to/store/genome_indices
+--genomeFastaFiles: /path/to/FASTA_file
+--sjdbGTFfile: /path/to/GTF_file
+--sjdbOverhang: readlength -1
+```
+##### runThreadN
+As we have seen before, the number of threads or cpus is the number of processing
+units you can use with your program. This means that your program can run in
+parallel, and you are encouraged to use them. Just as a caution, do not request
+more threads that you have (or requested if you are in a cluster), since this
+will hinder the efficiency as the threads will be competing with each other.
+
+##### limitGenomeGenerateRAM
+Often you would like to limit the amount of memory you are using, especially in
+HPC systems. By default (if you do not set anything in this option), the program
+will use up to 31Gb of memory, so if you requested (or have) less than that, your
+run could be killed due to the lack of memory. If you set this variable make sure
+is in bytes.
+
+##### runMode
+For indexing this option has to be set to `genomeGenerate`. It will tell STAR
+that instead of mapping, the current run is to index the fasta file found in
+`genomeFastaFiles` and to place the indices into `genomeDir`. The other option
+for this flag in STAR is `alignReads`, the default, which we will see in the 
+aligning section.
+
+##### genomeDir
+This option tells STAR where to store the genome indices. As with 
+[FastQC](#quality-control-check-with-fastqc), the folder must exist prior to the
+run (i.e. will not create it for you), so make sure to use `mkdir` or to point
+to an existing folder.
+>This directory path will have
+to be supplied at the mapping step to identify the reference genome.
+
+##### genomeFastaFiles
+This option must include the path to where the genome (the one you want to index)
+fastas are located. The reference can be in a single fasta or multiple fastas 
+(usually one per chromosome).
+>The tabs are not allowed in chromosomes’ names, and spaces are not recommended
+
+##### sjdbGTFfile
+This optional flag will provide a path to the annoation file in 
+[GTF format](https://useast.ensembl.org/info/website/upload/gff.html). This will
+help STAR identify splice junctions and improve accuracy.
+>While this is optional, and STAR can be run without annotations,
+using annotations is highly recommended whenever they are available
+
+##### sjdbOverhang
+This option tells STAR the expected length around the annotated spliced junction
+to construct the database. Ideally, `ReadLength - 1` (meaning the length of your
+reads), but with reads of variable length, it should default max(ReadLength) -1.
+> * In most cases, the default value of 100 will work as well as the ideal value
+> * For Illumina 2x100b paired-end reads, the ideal value is 100-1=99
+
+### Running STAR genome indexing on Compute Canada cluster
+Show me how you would do it! 
+
+## Understanding STAR options: Mapping
+## Working with STAR
