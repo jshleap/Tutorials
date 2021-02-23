@@ -37,13 +37,15 @@ Table of Contents
   * [Understanding STAR options: Mapping](#understanding-star-options-mapping)
   * [Working with STAR](#working-with-star)
   * [Generating your indices and your mapping](#Generating your indices and your mapping)
-<!---
+    
+
 * [Cleaning the alignment with Picard](#cleaning-the-alignment-with-picard)
   * [Introduction to picard (only the relevant parts as this is a very big tool)](#introduction-to-picard-only-the-relevant-parts-as-this-is-a-very-big-tool)
   * [Understanding picard’s markduplicates](#understanding-picards-markduplicates)
   * [Understanding picard’s RNA metrics](#understanding-picards-rna-metrics)
   * [Cleaning your data and generate metrics](#cleaning-your-data-and-generate-metrics)
-
+    
+<!---
 Post-alignment quality control (30 mins)
 Introduction to RNASeQC
 Understanding RNASeQC options
@@ -369,7 +371,7 @@ new submission script will become:
 #SBATCH --account=def-someuser  #<-- this is the account of the PI
 #SBATCH --time=0-0:05:00        #<-- you need to provide the expected time (dd-hh:mm-ss)
 #SBATCH --cpus-per-task=1       #<-- Here is where you put the number of cpus you want
-#SBATCH --mem=4G                #<-- Amount of memory. In this case reserve all memory
+#SBATCH --mem=4G                #<-- Amount of memory.
 
 module load StdEnv/2020 fastqc/0.11.9
 fastq  ~/test/right.norm.fq     
@@ -1269,7 +1271,7 @@ submission script like this:
 #SBATCH --account=def-someuser  #<-- this is the account of the PI
 #SBATCH --time=0-1:00:00        #<-- you need to provide the expected time (dd-hh:mm-ss)
 #SBATCH --cpus-per-task=32      #<-- Here is where you put the number of cpus you want
-#SBATCH --mem=125G              #<-- Amount of memory. In this case reserve all memory
+#SBATCH --mem=125G              #<-- Amount of memory.
 
 module load StdEnv/2020 trimmomatic/0.39
 java -jar $EBROOTTRIMMOMATIC/trimmomatic-0.39.jar PE -threads ${SLURM_CPUS_PER_TASK} \
@@ -1399,5 +1401,157 @@ reads), but with reads of variable length, it should default max(ReadLength) -1.
 ### Running STAR genome indexing on Compute Canada cluster
 Show me how you would do it! 
 
+<details open>
+<summary>Peak at the solution after you have tried!</summary>
+<br>
+<pre>
+<code>
+#!/bin/bash                       
+#SBATCH --account=def-someuser  #<-- this is the account of the PI
+#SBATCH --time=0-2:00:00        #<-- you need to provide the expected time (dd-hh:mm-ss)
+#SBATCH --cpus-per-task=32      #<-- Here is where you put the number of cpus you want
+#SBATCH --mem=0                 #<-- Amount of memory. In this case reserve all memory
+#SBATCH --job-name STAR_index 	#<-- Job name
+#SBATCH -o %j.out			    #<-- File to which standard out will be written
+#SBATCH -e %j.err 		        #<-- File to which standard err will be written
+
+module load StdEnv/2020 star/2.7.5a
+
+mkdir -p hg38_index
+STAR --runThreadN ${SLURM_CPUS_PER_TASK} \
+--runMode genomeGenerate \
+--genomeDir hg38_index \    # This is the folder where the indices will be written
+--genomeFastaFiles reference_data_ensembl38 \ #This is the folder with the genome's fastas
+--sjdbGTFfile reference_data_ensembl38/Homo_sapiens.GRCh38.92.gtf \ # annotation file
+--sjdbOverhang 99 # Assumes that your reads are 100
+</code>
+</pre>
+</details>
+
+
 ## Understanding STAR options: Mapping
-## Working with STAR
+Now that we have indexed our reference genome, we can map our reads to it. This
+is the default mode in star (`--runMode alignReads`), so the runMode option need
+not to be passed. The basic options are:
+
+```ignorelang
+--runThreadN 
+--genomeDir /path/to/generated/genome_indices
+--readFilesIn /path/to/read1 [/path/to/read2]
+--readFilesCommand UncompressionCommand
+```
+
+There are many advanced options, but those are out of the scope of this tutorial, 
+so let's focus on these 4:
+
+##### runThreadN
+This is exactly as during genome indexing: the number of threads or cpus requested.
+>Just as a caution, do not request more threads that you have (or requested if you 
+> are in a cluster), since this will hinder the efficiency as the threads will 
+> be competing with each other.
+
+##### genomeDir
+This should be the path were you generated the indices. If you do not have that
+folder with the corresponding genome indices, go back to the previous section
+and run STAR on `runMode genomeGenerate`
+
+##### readFilesIn
+In this option you pass the path to where your reads (the sequences to be mapped
+) can be found.
+>If using Illumina paired-end reads, the read1 and read2 files have to
+be supplied. 
+
+When using pair-end reads, you will have to pass both (forward and reverse) paths
+to this option.
+
+STAR allows you to pass multiple samples at the same time to be mapped in a single
+job, using comma separated list of paths
+
+>For single-end reads use a comma separated list (no spaces around commas), e.g.
+> --readFilesIn sample1.fq,sample2.fq,sample3.fq. For paired-end reads, use comma 
+> separated list for read1 /space/ comma separated list for read2, e.g.: 
+> --readFilesIn sample1read1.fq,sample2read1.fq,sample3read1.fq sample1read2.fq,sample2read2.fq,sample3read2.fq.
+
+You will need to include the paths (or execute the program where the reads are)
+
+##### readFilesCommand
+More often than not, your reads will be compressed and will look like read1.zip
+or read.gz, or similar. Since there are many ways to compress files, you will
+need to tell STAR how to decompress the reads and send them to the standard 
+output (i.e. printing it to screen).
+
+>files (*.gz) use --readFilesCommand zcat OR --readFilesCommand gunzip -c. For bzip2-
+compressed files, use --readFilesCommand bunzip2 -c.
+ 
+
+### Running STAR mapping on Compute Canada
+Show me how you would do it! 
+
+<details open>
+<summary>Peak at the solution after you have tried!</summary>
+<br>
+This assumes that the reads are located in /scratch/someuser/sequences, that
+they are pair end, and ran on 3 diffrent samples:
+<ul>
+<li>sample1_R1.gz and sample1_R2.gz</li>
+<li>sample2_R1.gz and sample2_R2.gz</li>
+<li>sample3_R1.gz and sample3_R2.gz</li>
+</ul>
+Note that all reads are compressed with gunzip (.gz). You can run this in Compute
+Canada clusters like this:
+<br>
+<pre>
+<code>
+#!/bin/bash                       
+#SBATCH --account=def-someuser  #<-- this is the account of the PI
+#SBATCH --time=0-2:00:00        #<-- you need to provide the expected time (dd-hh:mm-ss)
+#SBATCH --cpus-per-task=32      #<-- Here is where you put the number of cpus you want
+#SBATCH --mem=0                 #<-- Amount of memory. In this case reserve all memory
+#SBATCH --job-name STAR_index 	#<-- Job name
+#SBATCH -o %j.out               #<-- File to which standard out will be written
+#SBATCH -e %j.err               #<-- File to which standard err will be written
+
+module load StdEnv/2020 star/2.7.5a
+
+mkdir -p hg38_index
+STAR --runThreadN ${SLURM_CPUS_PER_TASK} \
+--genomeDir hg38_index \    # This is the folder where the indices will be written
+--readFilesIn /scratch/someuser/sample1_R1.gz,/scratch/someuser/sample2_R1.gz,/scratch/someuser/sample3_R1.fq.gz \
+              /scratch/someuser/sample1_R2.gz,/scratch/someuser/sample2_R2.gz,/scratch/someuser/sample3_R2.fq.gz \
+--readFilesCommand gunzip -c
+</code>
+</pre>
+</details>
+
+## Cleaning the alignment with Picard
+### Introduction to picard (only the relevant parts as this is a very big tool)
+Picard/GATK helps you manipulate high-throughput sequencing data in formats like
+SAM/BAM/CRAM and VCF. 
+
+##### Command Syntax
+Picard is also written in Java, and has to be invoked in a similar manner than
+[Trimmomatic](#introduction-to-trimmomatic). In a regular computer, the general
+syntax is:
+```
+java jvm-args -jar picard.jar PicardToolName \
+	OPTION1=value1 \
+	OPTION2=value2
+```
+
+where `jvm-args` are arguments passed to the Java engine, `PicardToolName` 
+refers to the actual name of the tool that want to be use, and `OPTION1=value1`,
+are the option-value pairs of the options for the tool.
+
+In Compute Canada systems you can load picard with the LMOD command `module load`:
+
+```bash
+module load picard/2.23.3
+To execute picard run: java -jar $EBROOTPICARD/picard.jar
+```
+As with trimmomatic, it prints the way to invoke the tool, then the general syntax
+in Compute Canada clusters is:
+
+
+### Understanding picard’s markduplicates
+### Understanding picard’s RNA metrics
+### Cleaning your data and generate metrics
