@@ -22,15 +22,18 @@ Table of Contents
   * [Principles of RNA-seq](#principles-of-rna-seq)
   * [RNA-seq standard analysis](#rna-seq-standard-analysis)
 
+
 * [Quality control check with FASTQC](#quality-control-check-with-fastqc)
   *[Before we start: File formats](#before-we-start-file-formats)
   * [Working with FASTQC](#working-with-fastqc)
   * [Understanding the report](#understanding-the-report)
 
+
 * [Trimming and adapter removal with Trimmomatic](#trimming-and-adapter-removal-with-trimmomatic)
   * [Introduction to Trimmomatic](#introduction-to-trimmomatic)
   * [Understanding Trimmomatic options](#understanding-trimmomatic-options)
   * [Working with Trimmomatic](#working-with-trimmomatic)
+
     
 * [Alignment and junction discovery using STAR](#alignment-and-junction-discovery-using-star)
   * [Understanding STAR options: Generating indices](#understanding-star-options-generating-indices)
@@ -41,10 +44,11 @@ Table of Contents
 
 * [Cleaning the alignment with Picard](#cleaning-the-alignment-with-picard)
   * [Introduction to picard (only the relevant parts as this is a very big tool)](#introduction-to-picard-only-the-relevant-parts-as-this-is-a-very-big-tool)
-  * [Understanding picard’s markduplicates](#understanding-picards-markduplicates)
-  * [Understanding picard’s RNA metrics](#understanding-picards-rna-metrics)
+  * [Picard’s MergeSamFiles](#picards-mergesamfiles)
+  * [Picard’s SortSAM](#picards-sortsam)
+  * [Picard’s CollectRnaSeqMetrics](#picards-collectrnaseqmetrics)
   * [Cleaning your data and generate metrics](#cleaning-your-data-and-generate-metrics)
-    
+ 
 <!---
 Post-alignment quality control (30 mins)
 Introduction to RNASeQC
@@ -1532,7 +1536,8 @@ SAM/BAM/CRAM and VCF.
 Picard is also written in Java, and has to be invoked in a similar manner than
 [Trimmomatic](#introduction-to-trimmomatic). In a regular computer, the general
 syntax is:
-```
+
+```bash
 java jvm-args -jar picard.jar PicardToolName \
 	OPTION1=value1 \
 	OPTION2=value2
@@ -1551,7 +1556,39 @@ To execute picard run: java -jar $EBROOTPICARD/picard.jar
 As with trimmomatic, it prints the way to invoke the tool, then the general syntax
 in Compute Canada clusters is:
 
+```bash
+java jvm-args -jar $EBROOTPICARD/picard.jar PicardToolName \
+	OPTION1=value1 \
+	OPTION2=value2
+```
+Note that you can modify Java's behavious in Compute Canada by passing options
+(i.e. jvm-args)
 
-### Understanding picard’s markduplicates
-### Understanding picard’s RNA metrics
+After STAR, most RNA-seq pipeline would use picard to:
+1. Merge resulting SAM files (if multiple)
+2. Sort the merged SAM file
+3. Mark duplicates
+4. Generate RNA metrics
+
+### Picard’s MergeSamFiles
+Often we need to merge SAM/BAM files from parallel runs of the mapping software.
+Like with most pipelines, there are multiple tools to do this, but Picard's 
+MergeSamFiles is a popular choice. To run it, you have to provide multiple 
+inputs (`I`) and an output (`O`). You can pass a single thread/cpu to help with
+compressing and writting, but in general, this tools is not parallelizable.
+Assuming that you have two SAM files names `file1.sam` and `file2.sam`, and 
+that you would like the output to be named `output.sam`, you can:
+
+```bash
+module load picard/2.23.3
+java -jar $EBROOTPICARD/picard.jar MergeSamFiles \
+	I=file1.sam \
+	I=file1.sam \
+	O=output.sam \
+	USE_THREADING=true
+```
+
+### Picard’s SortSAM
+### Picard’s MarkDuplicates
+### Picard’s CollectRnaSeqMetrics
 ### Cleaning your data and generate metrics
