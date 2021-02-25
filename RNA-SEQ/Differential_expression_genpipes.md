@@ -1425,7 +1425,7 @@ mkdir -p hg38_index
 STAR --runThreadN ${SLURM_CPUS_PER_TASK} \
 --runMode genomeGenerate \
 --genomeDir hg38_index \    # This is the folder where the indices will be written
---genomeFastaFiles reference_data_ensembl38 \ #This is the folder with the genome's fastas
+--genomeFastaFiles reference_data_ensembl38/*.gz \ #This is the folder with the genome's fastas
 --sjdbGTFfile reference_data_ensembl38/Homo_sapiens.GRCh38.92.gtf \ # annotation file
 --sjdbOverhang 99 # Assumes that your reads are 100
 </code>
@@ -1532,6 +1532,57 @@ STAR --runThreadN ${SLURM_CPUS_PER_TASK} \
 Picard/GATK helps you manipulate high-throughput sequencing data in formats like
 SAM/BAM/CRAM and VCF. 
 
+#### Before we start, the SAM format
+To understand what picard will be doing, we need to familiarized ourselves with
+the SAM/BAM formats. Both formats are the same, with the exception that the BAM
+format is the binary version of the SAM. SAM stands for Sequence Alignment Map
+and is the main format of -- you guessed it -- mapping software. Similar to 
+other sequence files lile fasta and fastq, SAM consist on header and alignemnt 
+fields, the former always coming before the latter. 
+<p align="center">
+  <img src="https://du-bii.github.io/module-5-Methodes-Outils/seance1/images/SAM_format.jpg"><br>
+  <sup>Image from <a href="https://du-bii.github.io/module-5-Methodes-Outils/seance1/images/SAM_format.jpg"> https://du-bii.github.io/module-5-Methodes-Outils/seance1/images/SAM_format.jpg</a></sup>
+</p>
+
+As you can see, is a  it is a TAB-delimited text format. As with fastq, the 
+header starts with the symbol `@`, but unlike fastq, both the alignment and the
+header can have multiple lines. The header is optional and give extra information.
+
+Each alignment section has 11 mandatory fields:
+
+Column|	Field	|Type	|Brief Description
+---   |---      |---    |---              
+1	  |QNAME	|String	|Query template NAME
+2	  |FLAG	    |Int	|[bitwise FLAG](https://en.wikipedia.org/wiki/SAM_(file_format)#Bitwise_flags)
+3	  |RNAME	|String	|References sequence NAME
+4	  |POS	    |Int	|1- based leftmost mapping POSition
+5	  |MAPQ	    |Int	|[MAPping Quality](https://genome.sph.umich.edu/wiki/Mapping_Quality_Scores)
+6	  |CIGAR	|String	|[CIGAR string](https://genome.sph.umich.edu/wiki/SAM#:~:text=The%20CIGAR%20string%20is%20a,are%20not%20in%20the%20reference)
+7	  |RNEXT	|String	|Ref. name of the mate/next read
+8	  |PNEXT	|Int	|Position of the mate/next read
+9	  |TLEN	    |Int	|observed Template LENgth
+10	  |SEQ	    |String	|segment SEQuence
+11	  |QUAL	    |String	|[ASCII of Phred-scaled base QUALity+33](https://support.illumina.com/help/BaseSpace_OLH_009008/Content/Source/Informatics/BS/QualityScoreEncoding_swBS.htm)
+
+The header is optional, but when present it has important metada tags, and marks
+(like when you mark duplicates, etc). The options are too mant co cover them here
+(for a more compreshensive explanation of the SAM file format check [here](
+http://samtools.github.io/hts-specs/SAMv1.pdf), including headers), but some of
+the main ones:
+* `@HD`: File-level metadata. If present, there must be only one @HD line and it 
+  must be the first line of the file. It gives information about the version of
+  the file (VN), how is the file sorted (unknown (default), unsorted, queryname
+  and coordinate), how the sequences are grouped (GO), etc.
+  
+* `@SQ`: Reference sequence dictionary. The order of @SQ lines defines the 
+  alignment sorting order. It provides with name of the sequence (SN), refence
+  sequence lenght (LN), alternate locus (AH), among many other options.
+  
+* `@RG`: Read group. Unordered multiple @RG lines are allowed. It gives 
+  information about the groupiong of the reads such as read group identifier (ID)
+  barcode sequence identifying the sample library (BC), library (LB), etc.
+  
+
 ##### Command Syntax
 Picard is also written in Java, and has to be invoked in a similar manner than
 [Trimmomatic](#introduction-to-trimmomatic). In a regular computer, the general
@@ -1575,7 +1626,7 @@ Often we need to merge SAM/BAM files from parallel runs of the mapping software.
 Like with most pipelines, there are multiple tools to do this, but Picard's 
 MergeSamFiles is a popular choice. To run it, you have to provide multiple 
 inputs (`I`) and an output (`O`). You can pass a single thread/cpu to help with
-compressing and writting, but in general, this tools is not parallelizable.
+compressing and writting, but in general, this tools is not parallelizeable.
 Assuming that you have two SAM files names `file1.sam` and `file2.sam`, and 
 that you would like the output to be named `output.sam`, you can:
 
@@ -1587,8 +1638,28 @@ java -jar $EBROOTPICARD/picard.jar MergeSamFiles \
 	O=output.sam \
 	USE_THREADING=true
 ```
+This will generate a single unsorted SAM file called output.sam. The same procedure
+can be perfoem to merge bamfiles.
 
 ### Picard’s SortSAM
+As mentioned in the previous section, once file are merged or mapped, they might
+be unsorted. Sorted files are important for efficiency resons, and many programs
+require the SAM/BAM files to be sorted. This can also be achieved through Picard's
+functionality through the tool called SortSAM. This tool:
+>This tool sorts the input SAM or BAM file by coordinate, queryname (QNAME), or
+> some other property of the SAM record. The SortOrder of a SAM/BAM file is found 
+> in the SAM file header tag @HD in the field labeled SO.
+> 
+> For a coordinate sorted SAM/BAM file, read alignments are sorted first by the
+> reference sequence name (RNAME) field using the reference sequence dictionary
+> (@SQ tag). Alignments within these subgroups are secondarily sorted using the
+> left-most mapping position of the read (POS). Subsequent to this sorting 
+> scheme, alignments are listed arbitrarily. 
+> 
+> For queryname-sorted alignments, all alignments are grouped using the 
+>queryname field but the alignments are not necessarily sorted within these 
+> groups. Reads having the same queryname are derived from the same template.
+
 ### Picard’s MarkDuplicates
 ### Picard’s CollectRnaSeqMetrics
 ### Cleaning your data and generate metrics
