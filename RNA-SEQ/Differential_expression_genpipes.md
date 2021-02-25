@@ -24,7 +24,7 @@ Table of Contents
 
 
 * [Quality control check with FASTQC](#quality-control-check-with-fastqc)
-  *[Before we start: File formats](#before-we-start-file-formats)
+  * [Before we start: File formats](#before-we-start-file-formats)
   * [Working with FASTQC](#working-with-fastqc)
   * [Understanding the report](#understanding-the-report)
 
@@ -38,8 +38,7 @@ Table of Contents
 * [Alignment and junction discovery using STAR](#alignment-and-junction-discovery-using-star)
   * [Understanding STAR options: Generating indices](#understanding-star-options-generating-indices)
   * [Understanding STAR options: Mapping](#understanding-star-options-mapping)
-  * [Working with STAR](#working-with-star)
-  * [Generating your indices and your mapping](#Generating your indices and your mapping)
+  * [Running STAR mapping on Compute Canada](#running-star-genome-indexing-on-compute-canada-cluster)
     
 
 * [Cleaning the alignment with Picard](#cleaning-the-alignment-with-picard)
