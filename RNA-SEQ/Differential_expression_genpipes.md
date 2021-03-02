@@ -1516,7 +1516,7 @@ Canada clusters like this:
 
 module load StdEnv/2020 star/2.7.5a
 
-mkdir -p hg38_index
+
 STAR --runThreadN ${SLURM_CPUS_PER_TASK} \
 --genomeDir hg38_index \    # This is the folder where the indices will be written
 --readFilesIn /scratch/someuser/sample1_R1.gz,/scratch/someuser/sample2_R1.gz,/scratch/someuser/sample3_R1.fq.gz \
@@ -1660,5 +1660,19 @@ functionality through the tool called SortSAM. This tool:
 > groups. Reads having the same queryname are derived from the same template.
 
 ### Picard’s MarkDuplicates
+This tool check and mark (not remove) duplicates. Duplicate reads are defined as:
+
+> originating from a single fragment of DNA. Duplicates can arise during sample
+> preparation e.g. library construction using PCR. Duplicate reads can also 
+> result from a single amplification cluster, incorrectly detected as multiple 
+> clusters by the optical sensor of the sequencing instrument. These duplication
+> artifacts are referred to as optical duplicates.
+ 
+We want to know (and later softclip them) where the duplicates are, but since we
+are working with RNA-SEQ, most reasercher choose not to remove them. This is 
+because it has been shown that retaining some unatural duplicates does not cause 
+significant artifacts if the library complexity, while removing them might also
+remove natural duplicates in the transription data, distorting our analyses.
+
 ### Picard’s CollectRnaSeqMetrics
 ### Cleaning your data and generate metrics
