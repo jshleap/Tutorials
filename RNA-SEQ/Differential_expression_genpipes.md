@@ -1637,8 +1637,10 @@ java -jar $EBROOTPICARD/picard.jar MergeSamFiles \
 	O=output.sam \
 	USE_THREADING=true
 ```
-This will generate a single unsorted SAM file called output.sam. The same procedure
-can be perfoem to merge bamfiles.
+This will generate a single unsorted SAM file called output.sam. The same 
+procedure can be perform to merge bamfiles. You can check more options [here](
+http://broadinstitute.github.io/picard/command-line-overview.html#MergeSamFiles
+).
 
 ### Picard’s SortSAM
 As mentioned in the previous section, once file are merged or mapped, they might
@@ -1659,6 +1661,20 @@ functionality through the tool called SortSAM. This tool:
 >queryname field but the alignments are not necessarily sorted within these 
 > groups. Reads having the same queryname are derived from the same template.
 
+#### Example usage
+```bash
+module load picard/2.23.3
+java -jar $EBROOTPICARD/picard.jar SortSam \
+      I=input.bam \
+      O=sorted.bam \
+      SORT_ORDER=coordinate
+```
+The possible values of SORT_ORDER are:
+1. unsorted: Leave the file as is 
+2. queryname: Alphabetical sorting based on the query name 
+3. coordinate: Numerical by chromosome and start position
+4. duplicate: Sorts the reads so that duplicates reads are adjacent
+
 ### Picard’s MarkDuplicates
 This tool check and mark (not remove) duplicates. Duplicate reads are defined as:
 
@@ -1673,6 +1689,21 @@ are working with RNA-SEQ, most reasercher choose not to remove them. This is
 because it has been shown that retaining some unatural duplicates does not cause 
 significant artifacts if the library complexity, while removing them might also
 remove natural duplicates in the transription data, distorting our analyses.
+
+#### Usage example
+```bash
+module load picard/2.23.3
+java -jar $EBROOTPICARD/picard.jar MarkDuplicates \
+      I=input.bam \
+      O=marked_duplicates.bam \
+      M=marked_dup_metrics.txt
+```
+The metrics (M) option write down information about the duplication found.
+
+If desired, you can remove optical duplicates with the option 
+`REMOVE_SEQUENCING_DUPLICATES=true` and/or remove all duplicates with 
+`REMOVE_DUPLICATES=true`. More options can be found on the tool's [documentation](
+https://broadinstitute.github.io/picard/command-line-overview.html#MarkDuplicates).
 
 ### Picard’s CollectRnaSeqMetrics
 ### Cleaning your data and generate metrics
