@@ -99,7 +99,7 @@ you to connect to remote servers and move files between your local computer and
 a cluster for example. Similar to the example above, you need toc create an ssh
 session:
 
-![MobaxtermX11](https://github.com/jshleap/Tutorials/blob/main/images/800px-MobaXterm_X11.png?raw=true)
+![MobaxtermX11](https://raw.githubusercontent.com/jshleap/Tutorials/main/RNA-SEQ/images/800px-MobaXterm_X11.png)
 
 ### Moving files from and to a remote server
 There are multiples ways to copy files from and to a remote server. One useful 
@@ -1539,7 +1539,7 @@ and is the main format of -- you guessed it -- mapping software. Similar to
 other sequence files lile fasta and fastq, SAM consist on header and alignemnt 
 fields, the former always coming before the latter. 
 <p align="center">
-  <img src="https://du-bii.github.io/module-5-Methodes-Outils/seance1/images/SAM_format.jpg"><br>
+  <img src="https://raw.github.com/ecerami/samtools_primer/master/figs/sam_format_example.png"><br>
   <sup>Image from <a href="https://du-bii.github.io/module-5-Methodes-Outils/seance1/images/SAM_format.jpg"> https://du-bii.github.io/module-5-Methodes-Outils/seance1/images/SAM_format.jpg</a></sup>
 </p>
 
@@ -1706,4 +1706,14 @@ If desired, you can remove optical duplicates with the option
 https://broadinstitute.github.io/picard/command-line-overview.html#MarkDuplicates).
 
 ### Picard’s CollectRnaSeqMetrics
+This tool produces important RNA alignment metrics for your files. It takes 
+either a BAM or SAM of **aligned** reads (as we did with [STAR](#alignment-and-junction-discovery-using-star)).
+This will describe the distribution of the bases within the transcripts (
+nucleotides on each genomic region), the regions passing quality filters, etc.
+
+
+Other metrics include the median coverage (depth), the ratios of 5 prime /3 prime-biases, and the numbers of reads with the correct/incorrect strand designation. The 5 prime /3 prime-bias results from errors introduced by reverse transcriptase enzymes during library construction, ultimately leading to the over-representation of either the 5 prime or 3 prime ends of transcripts. Please see the CollectRnaSeqMetrics definitions for details on how these biases are calculated.
+
+The sequence input must be a valid SAM/BAM file containing RNAseq data aligned by an RNAseq-aware genome aligner such a STAR or TopHat. The tool also requires a REF_FLAT file, a tab-delimited file containing information about the location of RNA transcripts, exon start and stop sites, etc. For an example refFlat file for GRCh38, see refFlat.txt.gz at http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database. The first five lines of the tab-limited text file appear as follows.
+
 ### Cleaning your data and generate metrics
