@@ -177,7 +177,7 @@ explained in [Moving files from and to a remote server](#moving-files-from-and-t
 or you can use the editors available in the cluster (i.e. nano, vin, emacs). To
 use nano, you simply type `nano` in the terminal, and a blank space will show up:
 
-![Nano](https://github.com/jshleap/Tutorials/blob/main/images/Nano.png?raw=true)
+![Nano](https://github.com/jshleap/Tutorials/raw/main/RNA-SEQ/images/Nano.png)
 
 ### Downloading files from the web
 There are many unix commands to download files from the web. Two of the most
@@ -618,10 +618,10 @@ calling each base can be computed. A new file format was needed for such informa
 and the FAST**Q** file was born. Since the earlier NGS technologies only produced
 short reads, fastq files sequence and qualities are represented in a single line:
 
-![fastq](https://www.researchgate.net/profile/Reinhard_Schneider2/publication/256095540/figure/fig7/AS:298005665206280@1448061495472/FASTQ-file-1st-line-always-starts-with-the-symbol-followed-by-the-sequence.png)
-<br><sup>from https://www.researchgate.net/publication/256095540_1756-0381-6-13
+![fastq](https://www.researchgate.net/profile/Morteza-Hosseini-6/publication/309134977/figure/fig2/AS:417452136648711@1476539753452/A-sample-of-the-FASTQ-file_W640.jpg)
+<br><sup>from DOI: https://doi.org/10.3390/info7040056
 
-The fastq files' header starts with an @ symbol, followed by the sequence identifyer
+The fastq files' header starts with an @ symbol, followed by the sequence identifier
 (often represents the techonology used, the lane, and other information). The next
 line in a fastq file is the sequence, which is usually DNA only (RNA is 
 retrotranscribed into cDNA). The third line, identified by a leading + sign, serves
@@ -1632,15 +1632,18 @@ that you would like the output to be named `output.sam`, you can:
 ```bash
 module load picard/2.23.3
 java -jar $EBROOTPICARD/picard.jar MergeSamFiles \
-	I=file1.sam \
-	I=file1.sam \
-	O=output.sam \
+	I=file1.bam \
+	I=file2.bam \
+	O=output.bam \
 	USE_THREADING=true
 ```
 This will generate a single unsorted SAM file called output.sam. The same 
 procedure can be perform to merge bamfiles. You can check more options [here](
 http://broadinstitute.github.io/picard/command-line-overview.html#MergeSamFiles
 ).
+
+For RNAseq, this should be done if you have more than one file PER SAMPLE. Do
+not merge files from different samples as it will create problems down the road.
 
 ### Picard’s SortSAM
 As mentioned in the previous section, once file are merged or mapped, they might
@@ -1711,9 +1714,81 @@ either a BAM or SAM of **aligned** reads (as we did with [STAR](#alignment-and-j
 This will describe the distribution of the bases within the transcripts (
 nucleotides on each genomic region), the regions passing quality filters, etc.
 
+Please see the [CollectRnaSeqMetrics definitions](http://broadinstitute.github.io/picard/picard-metric-definitions.html#RnaSeqMetrics) 
+for details on how things are calculated.
 
-Other metrics include the median coverage (depth), the ratios of 5 prime /3 prime-biases, and the numbers of reads with the correct/incorrect strand designation. The 5 prime /3 prime-bias results from errors introduced by reverse transcriptase enzymes during library construction, ultimately leading to the over-representation of either the 5 prime or 3 prime ends of transcripts. Please see the CollectRnaSeqMetrics definitions for details on how these biases are calculated.
+Besides the aligned BAM/SAM file, this tool requires a REF_FLAT file, a 
+tab-delimited file containing information about the location of RNA transcripts, 
+exon start and stop sites, etc. For an example refFlat file for GRCh38, 
+see refFlat.txt.gz at http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database. 
 
-The sequence input must be a valid SAM/BAM file containing RNAseq data aligned by an RNAseq-aware genome aligner such a STAR or TopHat. The tool also requires a REF_FLAT file, a tab-delimited file containing information about the location of RNA transcripts, exon start and stop sites, etc. For an example refFlat file for GRCh38, see refFlat.txt.gz at http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database. The first five lines of the tab-limited text file appear as follows.
+#### Usage example
+```bash
+module load picard/2.23.3
+java -jar picard.jar CollectRnaSeqMetrics \
+      I=input.bam \
+      O=output.RNA_Metrics \
+      REF_FLAT=ref_flat.txt \
+      STRAND=SECOND_READ_TRANSCRIPTION_STRAND \
+      RIBOSOMAL_INTERVALS=ribosomal.interval_list
+```
+
+Where **I** and **O** are input and output as before, **REF_FLAT** is the path
+to the flat reference file, and **RIBOSOMAL_INTERVALS** are the indices where ribosomal
+regions are. The latter is important as ribosomal regions might inflate some of
+the metrics. An example of that file can be downloaded from [here](https://gist.github.com/slowkow/b11c28796508f03cdf4b/raw/38d337698ff1e6915578dfa08826c73631c3e0b5/hg19.rRNA.interval_list).
+The **STRAND** option refers to STRAND_SPECIFICITY:
+>For strand-specific library prep. For unpaired reads, use FIRST_READ_TRANSCRIPTION_STRAND
+> if the reads are expected to be on the transcription strand. Required. Possible values:
+> {NONE, FIRST_READ_TRANSCRIPTION_STRAND, SECOND_READ_TRANSCRIPTION_STRAND}
 
 ### Cleaning your data and generate metrics
+Now you have your aligned reads, and you want to run the picard tools to do some 
+cleaning. That will look like this in slurm:
+
+<pre>
+<code>
+#!/bin/bash                       
+#SBATCH --account=def-someuser  #<-- this is the account of the PI
+#SBATCH --time=0-6:00:00        #<-- you need to provide the expected time (dd-hh:mm-ss)
+#SBATCH --cpus-per-task=32      #<-- Here is where you put the number of cpus you want
+#SBATCH --mem=0                 #<-- Amount of memory. In this case reserve all memory
+#SBATCH --job-name Picard_steps	#<-- Job name
+#SBATCH -o %j.out               #<-- File to which standard out will be written
+#SBATCH -e %j.err               #<-- File to which standard err will be written
+
+module load StdEnv/2020 picard/2.23.3
+
+# First merge files PERSAMPLE if required
+java -Xmx${SLURM_MEM_PER_NODE} $EBROOTPICARD/picard.jar \
+    MergeSamFiles MergeSamFiles \
+    I=SAMPLE1_1Aligned_out.bam \
+    I=SAMPLE1_2Aligned_out.bam \
+    I=SAMPLE1_3Aligned_out.bam \
+    O=SAMPLE1.bam \
+    USE_THREADING=true
+
+# Sort the merged file (or your aligned file if only one)
+java -Xmx${SLURM_MEM_PER_NODE} $EBROOTPICARD/picard.jar SortSam \
+    I=SAMPLE1.bam \
+    O=SAMPLE1_sorted.bam \
+    SORT_ORDER=coordinate 
+
+# Mark duplicates in the sorted file
+java -Xmx${SLURM_MEM_PER_NODE} $EBROOTPICARD/picard.jar MarkDuplicates \
+    I=SAMPLE1_sorted.bam \
+    O=SAMPLE1_marked_dup.bam \
+    M=marked_dup_metrics.txt 
+
+# Get some metrics
+java -Xmx${SLURM_MEM_PER_NODE} $EBROOTPICARD/picard.jar CollectRnaSeqMetrics \
+    I==SAMPLE1_marked_dup.bam \
+    O=SAMPLE1.RNA_Metrics \
+    REF_FLAT=PATH/TO/REF/ref_flat.txt \
+    STRAND=SECOND_READ_TRANSCRIPTION_STRAND \
+    RIBOSOMAL_INTERVALS=/PATH/TO/INTERVAL/ribosomal.interval_list
+</code>
+</pre>
+
+Now you will have your reads ready to proceed the pipeline!
+
