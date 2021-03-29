@@ -47,13 +47,17 @@ Table of Contents
   * [Picard’s SortSAM](#picards-sortsam)
   * [Picard’s CollectRnaSeqMetrics](#picards-collectrnaseqmetrics)
   * [Cleaning your data and generate metrics](#cleaning-your-data-and-generate-metrics)
- 
-<!---
-Post-alignment quality control (30 mins)
-Introduction to RNASeQC
-Understanding RNASeQC options
-Generating a report for your files (assignment)
+    
 
+* [Quantifying Ribosomal RNA](#quantifying-ribosomal-rna)
+  * [Using BWA](#using-bwa)
+ 
+
+* [Post-alignment quality control](#post-alignment-quality-control)
+  * [Introduction to RNASeQC](#introduction-to-rnaseqc)
+  * [Understanding RNASeQC options](#understanding-rnaseqc-options)
+
+<!---
 Transcript assembly with Cufflinks (2 - 3 Hours)
 Introduction to transcriptome assembly
 Understanding Samtools hardclip
@@ -1792,3 +1796,222 @@ java -Xmx${SLURM_MEM_PER_NODE} $EBROOTPICARD/picard.jar CollectRnaSeqMetrics \
 
 Now you will have your reads ready to proceed the pipeline!
 
+# Quantifying Ribosomal RNA
+Since ribosomal RNA is the most abundant of the RNAs, we want to quantify if the
+depletion in the molecular process was enough. To do that we can use fast mapping
+to known ribosomal sequences. In Compute Canada we have some versions of the human
+genome and some annotation at:
+
+```bash
+$ ls /cvmfs/ref.mugqic/genomes/species/Homo_sapiens.GRCh38
+annotations  Homo_sapiens.GRCh38.Ensembl90.dbSNP150.ini
+downloads    Homo_sapiens.GRCh38.ini
+genome       log
+
+$ cd /cvmfs/ref.mugqic/genomes/species/Homo_sapiens.GRCh38/annotations/rrna_bwa_index/
+$ ls
+Homo_sapiens.GRCh38.Ensembl77.rrna.fa
+Homo_sapiens.GRCh38.Ensembl77.rrna.fa.amb
+Homo_sapiens.GRCh38.Ensembl77.rrna.fa.ann
+Homo_sapiens.GRCh38.Ensembl77.rrna.fa.bwt
+Homo_sapiens.GRCh38.Ensembl77.rrna.fa.pac
+Homo_sapiens.GRCh38.Ensembl77.rrna.fa.sa
+Homo_sapiens.GRCh38.Ensembl83.rrna.fa
+Homo_sapiens.GRCh38.Ensembl83.rrna.fa.amb
+Homo_sapiens.GRCh38.Ensembl83.rrna.fa.ann
+Homo_sapiens.GRCh38.Ensembl83.rrna.fa.bwt
+Homo_sapiens.GRCh38.Ensembl83.rrna.fa.pac
+Homo_sapiens.GRCh38.Ensembl83.rrna.fa.sa
+Homo_sapiens.GRCh38.Ensembl85.rrna.fa
+Homo_sapiens.GRCh38.Ensembl85.rrna.fa.amb
+Homo_sapiens.GRCh38.Ensembl85.rrna.fa.ann
+Homo_sapiens.GRCh38.Ensembl85.rrna.fa.bwt
+Homo_sapiens.GRCh38.Ensembl85.rrna.fa.pac
+Homo_sapiens.GRCh38.Ensembl85.rrna.fa.sa
+Homo_sapiens.GRCh38.Ensembl86.rrna.fa
+Homo_sapiens.GRCh38.Ensembl86.rrna.fa.amb
+Homo_sapiens.GRCh38.Ensembl86.rrna.fa.ann
+Homo_sapiens.GRCh38.Ensembl86.rrna.fa.bwt
+Homo_sapiens.GRCh38.Ensembl86.rrna.fa.pac
+Homo_sapiens.GRCh38.Ensembl86.rrna.fa.sa
+Homo_sapiens.GRCh38.Ensembl87.rrna.fa
+Homo_sapiens.GRCh38.Ensembl87.rrna.fa.amb
+Homo_sapiens.GRCh38.Ensembl87.rrna.fa.ann
+Homo_sapiens.GRCh38.Ensembl87.rrna.fa.bwt
+Homo_sapiens.GRCh38.Ensembl87.rrna.fa.pac
+Homo_sapiens.GRCh38.Ensembl87.rrna.fa.sa
+Homo_sapiens.GRCh38.Ensembl90.rrna.fa
+Homo_sapiens.GRCh38.Ensembl90.rrna.fa.amb
+Homo_sapiens.GRCh38.Ensembl90.rrna.fa.ann
+Homo_sapiens.GRCh38.Ensembl90.rrna.fa.bwt
+Homo_sapiens.GRCh38.Ensembl90.rrna.fa.pac
+Homo_sapiens.GRCh38.Ensembl90.rrna.fa.sa
+```
+
+So we can use them to investigate the remnants of ribosomal RNA in our sample. To
+do so, we can just use BWA to map our reads to the reference ribosomal sequences.
+
+## Using BWA
+As STAR, BWA is a genome aligner. As opposed to STAR, BWA is not geared towards
+RNAseq and junction determination, but to do efficient mapping of reads to the 
+reference. As STAR, BWA also have to modes `index` and `mem`. Fortunately, in the
+path above we can see that index has been already called (files .amb, .ann, .bwt
+and .pac), so we only need to run the mem option. Although bwa has multiple option
+the only relevant for us here is the `-t` or threads, so the general usage is simple:
+
+```bash
+bwa mem -t <number of cpus> Path2reference Path2R1 PathtoR2 > outputsam
+```
+We can either "pipe" or transform the resulting sam into a bam using samtools:
+
+```bash
+bwa mem -t <number of cpus> Path2reference Path2R1 PathtoR2| samtools view -@ 32 -bS -o outputbam
+```
+
+Then we can use the flagstat tool of samtools to capture the alignemnt statistics.
+The relevant number is the fifth column (successfully aligned reads), which should
+be low. You can also pipe this last command (to avoid intermediate file):
+
+```bash
+bwa mem -t <number of cpus> Path2reference Path2R1 PathtoR2 | \
+  samtools view -@ <number of cpus> -bS | samtools samtools flagstat -@ <number of cpus> > rrna.stats
+```
+
+Now, try to create your submission script!!!
+
+<details open>
+<summary>Peak at the solution in Compute Canada after you have tried!</summary>
+<pre>
+<code>
+#!/bin/bash                       
+#SBATCH --account=def-someuser  #<-- this is the account of the PI
+#SBATCH --time=0-2:00:00        #<-- you need to provide the expected time (dd-hh:mm-ss)
+#SBATCH --cpus-per-task=32      #<-- Here is where you put the number of cpus you want
+#SBATCH --mem=0                 #<-- Amount of memory. In this case reserve all memory
+#SBATCH --job-name rRNA_quant	#<-- Job name
+#SBATCH -o %j.out               #<-- File to which standard out will be written
+#SBATCH -e %j.err               #<-- File to which standard err will be written
+
+module load StdEnv/2020 bwa/0.7.17 samtools
+path2ref=/cvmfs/ref.mugqic/genomes/species/Homo_sapiens.GRCh38/annotations/rrna_bwa_index/Homo_sapiens.GRCh38.Ensembl90.rrna.fa
+bwa mem -t ${SLURM_CPUS_PER_TASK} ${path2ref} YOUR_R1_Goes_HERE YOUR_R2_Goes_HERE | &#92;
+  samtools view -@ ${SLURM_CPUS_PER_TASK} -bS | &#92;
+  samtools samtools flagstat -@ ${SLURM_CPUS_PER_TASK} > rrna.stats
+</code>
+</pre>
+Check out the output and tell me if is OK!
+</details>
+
+# Post-alignment quality control
+We have done significant work so far, however, you do not know how good your 
+alignments are, and if general what is the quality of your data. For that we need
+a report similar to fastq, but tailored for RNAseq. The tool **RNASeQC**.
+
+## Introduction to RNASeQC
+RNASeQC is a handy tool specialized in getting RNAseq quality control metrics.
+It makes use of curated annotations of transcripts, however (from the tool's page):
+>This tool requires that the provided GTF be collapsed in such a way that there
+> are no overlapping transcripts on the same strand and that each gene have a 
+> single transcript whose id matches the parent gene id. This is not a 
+> transcript-quantification method. Readcounts and coverage are made towards 
+> exons and genes only if all aligned segments of a read fully align to exons of
+> a gene, but keep in mind that coverage may be counted towards multiple transcripts
+> (and its exons) if these criteria are met.
+
+Therefore we need first a GTF annotation file, and make sure the file is flat.
+The first part (obtaining the GTF file) is simple in Compute Canada as we have 
+those files in the same path explored above:
+
+```bash
+/cvmfs/ref.mugqic/genomes/species/Homo_sapiens.GRCh38/annotations/Homo_sapiens.GRCh38.Ensembl90.gtf
+```
+
+To make it flat we can use the [GTEx collapse annotation script](https://github.com/broadinstitute/gtex-pipeline/blob/master/gene_model/collapse_annotation.py), 
+however, the fellows at [C3G](https://www.computationalgenomics.ca/) already have 
+done it for us, so you can use:
+
+```bash
+/cvmfs/ref.mugqic/genomes/species/Homo_sapiens.GRCh38/annotations/Homo_sapiens.GRCh38.Ensembl90.transcript_id.gtf
+```
+
+## Understanding RNA-SeQC options
+The basic options for RNA-SeQC are:
+```bash
+rnaseqc [OPTIONS] gtf bam output
+```
+where `gtf` is the collapsed annotation file, `bam` is the input bam file resulting
+from your mapping and cleaning, and the `output` is the name of the output for the
+metrics.
+
+### Options
+There are a number of options that you can use to modify the default behaviour.
+Below a **shortened** list, you can check the helper option for a more 
+comprehensive list:
+
+##### Helper options
+You can pass the options `--help` (or `-h`, for short) to get help. You can also
+verify the version of the program with the `--version` option.
+
+#### Sample
+If you want to add a specific name to your sample, you can pass it through the
+`--sample` (`-s` for short). It defaults to the BAM filename. 
+
+#### BED file
+This option allow you to provide an optional file in [BED format](https://genome.ucsc.edu/FAQ/FAQformat.html#format1)
+of non-overlapping exons to be included in the fragment size calculation. If you
+have such a fe, you can pass it through the option `--bed`.
+
+#### Mapping quality
+You can change the default (255 or missing value) for the threshold of [mapping
+quality](http://maq.sourceforge.net/qual.shtml) that will be reported. To do so,
+you can pass it through `--mapping-quality` (`-q` for short).
+
+#### Base Mismatches 
+To control how many mismatches are allowed between a read and the reference, you 
+can use the option `--base-mismatch`. Reads with more than this number of 
+mismatches are excluded from coverage metrics, ait defaults to 6.
+
+#### Coverage statistics for all transcripts
+You can ask RNASeQC to give you either a summary statistic of all transcripts
+(default), or you can ask for coverage statistics of each transcript. If this is
+the case, you can use the `--coverage` flag (no input needed).
+
+### Running RNASeQC on Compute Canada
+Compute Canada does not have this program installed, however, you can install it
+in your home directory. To do this, you can:
+```bash
+# Download the source code
+wget https://github.com/getzlab/rnaseqc/releases/download/v2.4.2/rnaseqc.v2.4.2.full_source.tar.gz
+# uncompress and unarchive
+tar -xzf rnaseqc.v2.4.2.full_source.tar.gz
+# get into the directory
+cd rnaseqc/rnaseqc
+# Load required modules
+module load StdEnv/2020  gcc/9.3.0 boost/1.72.0 bamtools/2.5.1
+# Modify the make file
+sed -i "2s|$| -I${EBROOTBAMTOOLS}/include -I${EBROOTBOOST}/include|" Makefile
+# compile the program
+make -j 4
+# create a binary folder in your home
+mkdir ${HOME}/bin/
+# copy the binary into folder
+cp rnaseqc ${HOME}/bin
+# make it executable
+chmod +x ${HOME}/bin/rnaseqc
+```
+You can access now the program by pointing to its path `${HOME}/bin/rnaseqc`. In
+your sbatch script you can add something like:
+
+```bash
+#!/bin/bash                       
+#SBATCH --account=def-someuser  #<-- this is the account of the PI
+#SBATCH --time=0-2:00:00        #<-- you need to provide the expected time (dd-hh:mm-ss)
+#SBATCH --cpus-per-task=10      #<-- Here is where you put the number of cpus you want
+#SBATCH --mem=32G               #<-- Amount of memory. In this case reserve all memory
+#SBATCH --job-name RNASeQC  	#<-- Job name
+#SBATCH -o %j.out               #<-- File to which standard out will be written
+#SBATCH -e %j.err               #<-- File to which standard err will be written
+module load StdEnv/2020  gcc/9.3.0 boost/1.72.0 bamtools/2.5.1
+GTF_FILE=/cvmfs/ref.mugqic/genomes/species/Homo_sapiens.GRCh38/annotations/Homo_sapiens.GRCh38.Ensembl90.transcript_id.gtf
+${HOME}/bin/rnaseqc -s SAMPLE1 ${GTF_FILE} SAMPLE1_marked_dup.bam SAMPLE1.RNASeQC
+```
