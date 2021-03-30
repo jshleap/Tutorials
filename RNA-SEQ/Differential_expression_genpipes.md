@@ -1741,6 +1741,14 @@ Where **I** and **O** are input and output as before, **REF_FLAT** is the path
 to the flat reference file, and **RIBOSOMAL_INTERVALS** are the indices where ribosomal
 regions are. The latter is important as ribosomal regions might inflate some of
 the metrics. An example of that file can be downloaded from [here](https://gist.github.com/slowkow/b11c28796508f03cdf4b/raw/38d337698ff1e6915578dfa08826c73631c3e0b5/hg19.rRNA.interval_list).
+On Compute Canada systems we have a set of intervarl at 
+```
+/cvmfs/ref.mugqic/genomes/species/Homo_sapiens.${VERSION}/annotations/Homo_sapiens.${VERSION}.Ensembl${NSB_VER}.rrna.interval_list
+
+```
+Version being the specific reference genome version you are using (e.g GRCh38) and
+NSV_VER is the ensemble version you want to use (e.g. 90).
+
 The **STRAND** option refers to STRAND_SPECIFICITY:
 >For strand-specific library prep. For unpaired reads, use FIRST_READ_TRANSCRIPTION_STRAND
 > if the reads are expected to be on the transcription strand. Required. Possible values:
