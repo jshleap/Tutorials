@@ -22,25 +22,21 @@ Table of Contents
   * [Principles of RNA-seq](#principles-of-rna-seq)
   * [RNA-seq standard analysis](#rna-seq-standard-analysis)
 
-
 * [Quality control check with FASTQC](#quality-control-check-with-fastqc)
   * [Before we start: File formats](#before-we-start-file-formats)
   * [Working with FASTQC](#working-with-fastqc)
   * [Understanding the report](#understanding-the-report)
-
-
+    
 * [Trimming and adapter removal with Trimmomatic](#trimming-and-adapter-removal-with-trimmomatic)
   * [Introduction to Trimmomatic](#introduction-to-trimmomatic)
   * [Understanding Trimmomatic options](#understanding-trimmomatic-options)
   * [Working with Trimmomatic](#working-with-trimmomatic)
-
     
 * [Alignment and junction discovery using STAR](#alignment-and-junction-discovery-using-star)
   * [Understanding STAR options: Generating indices](#understanding-star-options-generating-indices)
   * [Understanding STAR options: Mapping](#understanding-star-options-mapping)
   * [Running STAR mapping on Compute Canada](#running-star-genome-indexing-on-compute-canada-cluster)
     
-
 * [Cleaning the alignment with Picard](#cleaning-the-alignment-with-picard)
   * [Introduction to picard (only the relevant parts as this is a very big tool)](#introduction-to-picard-only-the-relevant-parts-as-this-is-a-very-big-tool)
   * [Picard’s MergeSamFiles](#picards-mergesamfiles)
@@ -48,24 +44,23 @@ Table of Contents
   * [Picard’s CollectRnaSeqMetrics](#picards-collectrnaseqmetrics)
   * [Cleaning your data and generate metrics](#cleaning-your-data-and-generate-metrics)
     
-
 * [Quantifying Ribosomal RNA](#quantifying-ribosomal-rna)
   * [Using BWA](#using-bwa)
  
-
 * [Post-alignment quality control](#post-alignment-quality-control)
   * [Introduction to RNASeQC](#introduction-to-rnaseqc)
   * [Understanding RNASeQC options](#understanding-rnaseqc-options)
+    
+<!--
+* [Transcript assembly with Cufflinks](#transcript-assembly-with-cufflinks)
+  * [Introduction to transcriptome assembly](#Introduction-to-transcriptome-assembly)
+  * [Understanding Samtools hardclip](#understanding-samtools-hardclip)
+  * [Understanding Cufflinks](#understanding-cufflinks) 
+  * [Understanding Cuffmerge](#understanding-cuffmerge)
+  * [Understanding Cuffdiff](#understanding-cuffdiff)
+  * [Understanding Cuffnorm](#understanding-cuffnorm)
+  * [Running Cufflinks bundle on your data](#running-cufflinks-bundle-on-your-data)
 
-<!---
-Transcript assembly with Cufflinks (2 - 3 Hours)
-Introduction to transcriptome assembly
-Understanding Samtools hardclip
-Understanding Cufflinks 
-Understanding Cuffmerge
-Understanding Cuffdiff
-Understanding Cuffnorm
-Running Cufflink bundle on your data (Assignment)
 
 Differential expression analysis using DESeq2 (1 hour)
 Differential expression analysis
@@ -1804,6 +1799,7 @@ java -Xmx${SLURM_MEM_PER_NODE} $EBROOTPICARD/picard.jar CollectRnaSeqMetrics \
 
 Now you will have your reads ready to proceed the pipeline!
 
+
 # Quantifying Ribosomal RNA
 Since ribosomal RNA is the most abundant of the RNAs, we want to quantify if the
 depletion in the molecular process was enough. To do that we can use fast mapping
@@ -1882,7 +1878,7 @@ be low. You can also pipe this last command (to avoid intermediate file):
 
 ```bash
 bwa mem -t <number of cpus> Path2reference Path2R1 PathtoR2 | \
-  samtools view -@ <number of cpus> -bS | samtools samtools flagstat -@ <number of cpus> > rrna.stats
+  samtools view -@ <number of cpus> -bS | samtools flagstat -@ <number of cpus> > rrna.stats
 ```
 
 Now, try to create your submission script!!!
@@ -1904,11 +1900,12 @@ module load StdEnv/2020 bwa/0.7.17 samtools
 path2ref=/cvmfs/ref.mugqic/genomes/species/Homo_sapiens.GRCh38/annotations/rrna_bwa_index/Homo_sapiens.GRCh38.Ensembl90.rrna.fa
 bwa mem -t ${SLURM_CPUS_PER_TASK} ${path2ref} YOUR_R1_Goes_HERE YOUR_R2_Goes_HERE | &#92;
   samtools view -@ ${SLURM_CPUS_PER_TASK} -bS | &#92;
-  samtools samtools flagstat -@ ${SLURM_CPUS_PER_TASK} > rrna.stats
+  samtools flagstat -@ ${SLURM_CPUS_PER_TASK} > rrna.stats
 </code>
 </pre>
 Check out the output and tell me if is OK!
 </details>
+
 
 # Post-alignment quality control
 We have done significant work so far, however, you do not know how good your 
@@ -2010,7 +2007,8 @@ chmod +x ${HOME}/bin/rnaseqc
 You can access now the program by pointing to its path `${HOME}/bin/rnaseqc`. In
 your sbatch script you can add something like:
 
-```bash
+<pre>
+<code>
 #!/bin/bash                       
 #SBATCH --account=def-someuser  #<-- this is the account of the PI
 #SBATCH --time=0-2:00:00        #<-- you need to provide the expected time (dd-hh:mm-ss)
@@ -2022,4 +2020,62 @@ your sbatch script you can add something like:
 module load StdEnv/2020  gcc/9.3.0 boost/1.72.0 bamtools/2.5.1
 GTF_FILE=/cvmfs/ref.mugqic/genomes/species/Homo_sapiens.GRCh38/annotations/Homo_sapiens.GRCh38.Ensembl90.transcript_id.gtf
 ${HOME}/bin/rnaseqc -s SAMPLE1 ${GTF_FILE} SAMPLE1_marked_dup.bam SAMPLE1.RNASeQC
-```
+</code>
+</pre>
+
+
+
+# Raw Counts
+Now that we have aligned and processed the reads, we need to get some data out 
+of them. One especially important statistic are the raw counts, or how many reads
+aligned with genes. Like with everything in bioinmatics there are plenty of options, 
+but in this titorial we will use the program HTSeq.
+
+## Counting aligned reads with HTSeq
+HTSeq is a python program that takes as input a splicing-aware alignment/mapping
+(like  the one we just did with STAR) and a 'Features' file in the GFF format.
+These features are the annotations of the reference genome to know where the 
+exons are present.
+
+HTSeq counts the reads with 3 possible overlapping:
+1. The union of all the sets. This mode is recommended for most use cases: mode union
+2. The intersection of all the sets: mode intersection-strict.    
+
+Special care must be taken to decide how to deal with reads that align to or 
+overlap with more than one feature. 
+
+
+
+
+the intersection of all non-empty sets S(i) for mode intersection-nonempty.
+If S contains precisely one feature, the read (or read pair) is counted for this feature. If S is empty, the read (or read pair) is counted as no_feature. If S contains more than one feature, htseq-count behaves differently based on the --nonunique option:
+
+--nonunique none (default): the read (or read pair) is counted as ambiguous and not counted for any features. Also, if the read (or read pair) aligns to more than one location in the reference, it is scored as alignment_not_unique.
+--nonunique all: the read (or read pair) is counted as ambiguous and is also counted in all features to which it was assigned. Also, if the read (or read pair) aligns to more than one location in the reference, it is scored as alignment_not_unique and also separately for each location.
+Notice that when using --nonunique all the sum of all counts will not be equal to the number of reads (or read pairs), because those with multiple alignments or overlaps get scored multiple times.
+
+The following figure illustrates the effect of these three modes and the --nonunique option:
+https://htseq.readthedocs.io/en/release_0.9.1/_images/count_modes.png
+
+https://htseq.readthedocs.io/en/release_0.9.1/_images/count_modes.png
+
+<!--
+# Transcript assembly with Cufflinks
+## Introduction to transcriptome assembly
+
+## Understanding Samtools hardclip
+samtools view -bh -F 256 -f 81 input_bam > clipped1
+samtools view -bh -F 256 -f 161 input_bam > clipped2
+java -jar $EBROOTPICARD/picard.jar MergeSamFiles \
+	I=clipped1 \
+	I=clipped2 \
+	O=output.bam \
+	USE_THREADING=true
+ 
+https://www.samformat.info/sam-format-flag
+## Understanding Cufflinks 
+## Understanding Cuffmerge
+## Understanding Cuffdiff
+## Understanding Cuffnorm
+## Running Cufflinks bundle on your data
+-->
