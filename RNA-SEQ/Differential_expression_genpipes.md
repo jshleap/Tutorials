@@ -50,6 +50,12 @@ Table of Contents
 * [Post-alignment quality control](#post-alignment-quality-control)
   * [Introduction to RNASeQC](#introduction-to-rnaseqc)
   * [Understanding RNASeQC options](#understanding-rnaseqc-options)
+* [Raw Counts](#raw-counts)
+  * [Counting aligned reads with HTSeq](#counting-aligned-reads-with-htseq)
+     * [Usage](#usage)
+     * [Output](#output)
+     * [Running HTSeq in Compute Canada](#running-htseq-in-compute-canada)
+
     
 <!--
 * [Transcript assembly with Cufflinks](#transcript-assembly-with-cufflinks)
@@ -1977,6 +1983,7 @@ can use the option `--base-mismatch`. Reads with more than this number of
 mismatches are excluded from coverage metrics, ait defaults to 6.
 
 #### Coverage statistics for all transcripts
+
 You can ask RNASeQC to give you either a summary statistic of all transcripts
 (default), or you can ask for coverage statistics of each transcript. If this is
 the case, you can use the `--coverage` flag (no input needed).
@@ -2141,6 +2148,7 @@ the program with the quiet option (`-q`, `--quiet`), suppressing the  progress
 report and warnings.
 
 ### Output
+
 The main output of HTSeq (see [usage](#usage)) is a table with counts of each 
 feature, in our case genes/exons. It contains some special counters:
 >__no_feature: reads (or read pairs) which could not be assigned to any feature 
