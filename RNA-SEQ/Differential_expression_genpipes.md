@@ -2028,8 +2028,8 @@ ${HOME}/bin/rnaseqc -s SAMPLE1 ${GTF_FILE} SAMPLE1_marked_dup.bam SAMPLE1.RNASeQ
 # Raw Counts
 Now that we have aligned and processed the reads, we need to get some data out 
 of them. One especially important statistic are the raw counts, or how many reads
-aligned with genes. Like with everything in bioinmatics there are plenty of options, 
-but in this titorial we will use the program HTSeq.
+aligned with genes. Like with everything in bioinformatics there are plenty of 
+options, but in this tutorial we will use the program HTSeq.
 
 ## Counting aligned reads with HTSeq
 HTSeq is a python program that takes as input a splicing-aware alignment/mapping
@@ -2037,27 +2037,171 @@ HTSeq is a python program that takes as input a splicing-aware alignment/mapping
 These features are the annotations of the reference genome to know where the 
 exons are present.
 
-HTSeq counts the reads with 3 possible overlapping:
-1. The union of all the sets. This mode is recommended for most use cases: mode union
-2. The intersection of all the sets: mode intersection-strict.    
+HTSeq counts the reads with 3 possible overlapping modes:
+1. The union of all the sets. This mode is recommended for most use cases: mode
+   `union`
+2. The intersection of all the sets: mode `intersection-strict`
+3. The intersection of non-empty sets: mode `intersection-nonempt`
 
 Special care must be taken to decide how to deal with reads that align to or 
-overlap with more than one feature. 
+overlap with more than one feature. This decision depends largely on the type
+of experiment and data, as well as to the confidence the researcher has in the
+data.
 
+Apart from the mode, there is the non-unique modifier (as per docs):
+>--nonunique none (default): the read (or read pair) is counted as ambiguous 
+   and not counted for any features. Also, if the read (or read pair) aligns to
+   more than one location in the reference, it is scored as alignment_not_unique.
+> 
+>--nonunique all: the read (or read pair) is counted as ambiguous and is also 
+   counted in all features to which it was assigned. Also, if the read (or read
+   pair) aligns to more than one location in the reference, it is scored as 
+   alignment_not_unique and also separately for each location.
+   Notice that when using --nonunique all the sum of all counts will not be equal 
+   to the number of reads (or read pairs), because those with multiple alignments
+   or overlaps get scored multiple times.
 
+The following figure illustrates the effect of these three modes and the 
+`--nonunique` option:
+![alt](https://htseq.readthedocs.io/en/release_0.9.1/_images/count_modes.png)
 
+### Usage
+Once you have HTSeq installed, you can:
 
-the intersection of all non-empty sets S(i) for mode intersection-nonempty.
-If S contains precisely one feature, the read (or read pair) is counted for this feature. If S is empty, the read (or read pair) is counted as no_feature. If S contains more than one feature, htseq-count behaves differently based on the --nonunique option:
+```bash
+htseq-count [options] <alignment_files> <gff_file>
+```
 
---nonunique none (default): the read (or read pair) is counted as ambiguous and not counted for any features. Also, if the read (or read pair) aligns to more than one location in the reference, it is scored as alignment_not_unique.
---nonunique all: the read (or read pair) is counted as ambiguous and is also counted in all features to which it was assigned. Also, if the read (or read pair) aligns to more than one location in the reference, it is scored as alignment_not_unique and also separately for each location.
-Notice that when using --nonunique all the sum of all counts will not be equal to the number of reads (or read pairs), because those with multiple alignments or overlaps get scored multiple times.
+The (relavant) options being:
+##### Format (-f \<format>, --format=\<format>)  
+This option informs of the format of the input data, being sam or bam the possible
+options. It defaults to sam. 
+```bash
+htseq-count -f bam <alignment_files> <gff_file>
+```
+#### Sorting order (-r \<order>, --order=\<order>)
+This option allow you to describe how was the sam/bam file sorted (if not sorted
+yes, do it with samtools or [picard](#picards-sortsam)). Use `name` (default), 
+if your mapping/alignment was sorted by query name. You can also pass `pos` if
+you sorted by coordinate.
+```bash
+htseq-count --order=pos <alignment_files> <gff_file>
+```
 
-The following figure illustrates the effect of these three modes and the --nonunique option:
-https://htseq.readthedocs.io/en/release_0.9.1/_images/count_modes.png
+#### Minumum quality (-a \<minaqual>, --a=\<minaqual>)
+Set the quality treshold to keep in alignments. By default is 10.
+```bash
+htseq-count -a 20 <alignment_files> <gff_file>
+```
 
-https://htseq.readthedocs.io/en/release_0.9.1/_images/count_modes.png
+#### Mode of overlap (-m \<mode>, --mode=\<mode>
+Mode to handle reads overlapping more than one feature, as explained 
+[previously](#counting-aligned-reads-with-htseq). The default is union:
+```bash
+htseq-count --mode=union <alignment_files> <gff_file>
+```
+
+#### Strandness (-s \<yes/no/reverse>, --stranded=\<yes/no/reverse>)
+Tell the program if you data comes from a strand-specific assay, the default being
+`yes`:
+
+>For stranded=no, a read is considered overlapping with a feature regardless of
+> whether it is mapped to the same or the opposite strand as the feature. For 
+> stranded=yes and single-end reads, the read has to be mapped to the same strand 
+> as the feature. For paired-end reads, the first read has to be on the same 
+> strand and the second read on the opposite strand. For stranded=reverse, 
+> these rules are reversed.
+
+>If your RNA-Seq data has not been made with a strand-specific protocol, this 
+> causes half of the reads to be lost. Hence, make sure to set the option 
+> --stranded=no unless you have strand-specific data!
+```bash
+htseq-count -s no <alignment_files> <gff_file>
+```
+
+#### Handle of Non-uniques (--nonunique=\<nonunique mode>)
+As explained in [Counting aligned reads with HTSeq](#counting-aligned-reads-with-htseq),
+this is a modifier on how to handle multiple overlaps. <nonunique mode> are `none`
+and `all` with the former by default. 
+```bash
+htseq-count --nonunique=none <alignment_files> <gff_file>
+```
+
+#### Write SAM output (-o \<samout>, --samout=\<samout>)
+If instead of only a report file we want to introduce the count as a feature in
+the sam file, we can pass the filename to the `-o` or `--samout` option.
+```bash
+htseq-count -o afile.sam <alignment_files> <gff_file>
+```
+
+#### Miscelaneaous
+There are other options that you can see with the help option (`-h`, `--help`), 
+which will also show a usage summary. You can also turn off the verbosity of 
+the program with the quiet option (`-q`, `--quiet`), suppressing the  progress 
+report and warnings.
+
+### Output
+The main output of HTSeq (see [usage](#usage)) is a table with counts of each 
+feature, in our case genes/exons. It contains some special counters:
+>__no_feature: reads (or read pairs) which could not be assigned to any feature 
+   (set S as described above was empty).
+> 
+>__ambiguous: reads (or read pairs) which could have been assigned to more than
+   one feature and hence were not counted for any of these, unless the 
+> --nonunique all option was used (set S had more than one element).
+> 
+>__too_low_aQual: reads (or read pairs) which were skipped due to the -a option,
+>
+>__not_aligned: reads (or read pairs) in the SAM file without alignment
+> 
+> __alignment_not_unique: reads (or read pairs) with more than one reported alignment. 
+ 
+### Running HTSeq in Compute Canada
+As mentioned earlier, HTSeq is not written in a compiled language like we have use
+so far, but in python. Compute Canada carries a series of wheels can can be installed.
+You can check the [documentation](https://docs.computecanada.ca/wiki/Python) for more
+information. In a nutshell:
+1. Load required modules
+   ```bash
+   module load python/3.7
+   ```
+2. Create a virtual environment
+   ```bash
+   virtualenv --no-download ${HOME}/htseq_env
+   ```
+3. Activate the virtual environment:
+   ```bash
+   source ${HOME}/htseq_env/bin/activate
+   ```
+4. Install the wheel
+   ```bash
+   pip install --no-index htseq
+   ```
+Now you can run `htseq-count` directly. Remember to deactivate the environment
+when you are done using the command `deactivate`. As per the
+[documentation](https://docs.computecanada.ca/wiki/Python), you can create the 
+virtual environment and do the installation inside a SLURM job:
+
+<pre>
+<code>
+#!/bin/bash                       
+#SBATCH --account=def-someuser  #<-- this is the account of the PI
+#SBATCH --time=0-2:00:00        #<-- you need to provide the expected time (dd-hh:mm-ss)
+#SBATCH --cpus-per-task=10      #<-- Here is where you put the number of cpus you want
+#SBATCH --mem=32G               #<-- Amount of memory. In this case reserve all memory
+#SBATCH --job-name HTSeq      	#<-- Job name
+#SBATCH -o %j.out               #<-- File to which standard out will be written
+#SBATCH -e %j.err               #<-- File to which standard err will be written
+module load StdEnv/2020 python/3.7
+PATH2ALIGNMENT=some/path/to/bam
+PATH2GFF=/cvmfs/ref.mugqic/genomes/species/Homo_sapiens.GRCh38/annotations/Homo_sapiens.GRCh38.Ensembl90.gtf
+virtualenv --no-download ${SLURM_TMPDIR}/htseq_env
+source  ${SLURM_TMPDIR}/htseq_env/bin/activate
+pip install --no-index htseq
+htseq-count -s no ${PATH2ALIGNMENT} ${PATH2GFF} > myalignment.counts
+</code>
+</pre>
+
 
 <!--
 # Transcript assembly with Cufflinks
