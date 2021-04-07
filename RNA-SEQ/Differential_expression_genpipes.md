@@ -1884,7 +1884,7 @@ be low. You can also pipe this last command (to avoid intermediate file):
 
 ```bash
 bwa mem -t <number of cpus> Path2reference Path2R1 PathtoR2 | \
-  samtools view -@ <number of cpus> -bS | samtools flagstat -@ <number of cpus> > rrna.stats
+  samtools view -@ <number of cpus> -bS - | samtools flagstat -@ <number of cpus> - > rrna.stats
 ```
 
 Now, try to create your submission script!!!
