@@ -1905,8 +1905,8 @@ Now, try to create your submission script!!!
 module load StdEnv/2020 bwa/0.7.17 samtools
 path2ref=/cvmfs/ref.mugqic/genomes/species/Homo_sapiens.GRCh38/annotations/rrna_bwa_index/Homo_sapiens.GRCh38.Ensembl90.rrna.fa
 bwa mem -t ${SLURM_CPUS_PER_TASK} ${path2ref} YOUR_R1_Goes_HERE YOUR_R2_Goes_HERE | &#92;
-  samtools view -@ ${SLURM_CPUS_PER_TASK} -bS | &#92;
-  samtools flagstat -@ ${SLURM_CPUS_PER_TASK} > rrna.stats
+  samtools view -@ ${SLURM_CPUS_PER_TASK} -bS -| &#92;
+  samtools flagstat -@ ${SLURM_CPUS_PER_TASK} - > rrna.stats
 </code>
 </pre>
 Check out the output and tell me if is OK!
