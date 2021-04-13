@@ -2210,6 +2210,40 @@ htseq-count -s no ${PATH2ALIGNMENT} ${PATH2GFF} > myalignment.counts
 </code>
 </pre>
 
+# Processing the Raw Counts
+Raw counts produced by [HTSeq](#counting-aligned-reads-with-htseq) need to be 
+read in a features (e.g. genes) by treatments, something like this:
+<p align="center">
+  <img src="https://4va.github.io/biodatasci/img/countdatacoldata.png"><br>
+  <sup>Image from <a href="https://4va.github.io/biodatasci/img/countdatacoldata.png"> https://4va.github.io/biodatasci/img/countdatacoldata.png</a></sup>
+</p>
+
+To read it in the correct format, we could use multiple programming languages, 
+but since the DGE will be done in R, we will use the same package throughout:  
+DESeq2. But before we delve into learning a bit of R and the package let's talk
+about differential expression analyses.
+
+## Differential Expression Analyses (DGE)
+Also known as Differential Gene Expression (hence the DGE acronym), it is an 
+analysis on the counts of copies of transcripts of a set of genes. In the context
+of RNAseq, most sequenced genes.
+In short, DGE takes normalised read counts to perform an statistical analysis 
+to quantify significant changes in expression levels between experimental groups. 
+It tries to tease appart of the observed differences are greater than what would 
+be expected just due to natural random variation. [DESeq2](https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html) 
+bases its test on a negative binomial (NB) distributions, while other resources 
+(e.g  baySeq, EBSeq) use a Bayesian approach.
+
+### Normalization
+Since the counts varied for a lot of reasons, the first step is normalization.
+This is done to make the comparison among samples valid. This step allows us to 
+focus the analyses into the relevant difference instead of the spurious ones.
+However, DESeq2 requires the un-normalized values as it makes some statistical
+modeling of the errors, and corrects accordingly. That being said, there are a 
+few ways to normalized your data that you should be aware of:
+
+
+
 
 <!--
 # Transcript assembly with Cufflinks
