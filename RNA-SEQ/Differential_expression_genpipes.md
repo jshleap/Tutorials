@@ -1937,13 +1937,25 @@ those files in the same path explored above:
 /cvmfs/ref.mugqic/genomes/species/Homo_sapiens.GRCh38/annotations/Homo_sapiens.GRCh38.Ensembl90.gtf
 ```
 
-To make it flat we can use the [GTEx collapse annotation script](https://github.com/broadinstitute/gtex-pipeline/blob/master/gene_model/collapse_annotation.py), 
-however, the fellows at [C3G](https://www.computationalgenomics.ca/) already have 
-done it for us, so you can use:
-
+To make it flat we can use the [GTEx collapse annotation script](https://github.com/broadinstitute/gtex-pipeline/raw/master/gene_model/collapse_annotation.py).
+To be able to use we it we will to create a python virtual environment:
 ```bash
-/cvmfs/ref.mugqic/genomes/species/Homo_sapiens.GRCh38/annotations/Homo_sapiens.GRCh38.Ensembl90.transcript_id.gtf
+# Load the required modules
+module load scipy-stack/2020b
+# create a virtual environment
+virtualenv --no-download env
+# Activate the virtual environment
+source env/bin/activate
+# install prerequisites
+pip install bx-python
+# download the required script
+wget https://github.com/broadinstitute/gtex-pipeline/raw/master/gene_model/collapse_annotation.py
+# faltten the reference genome:
+REF=/cvmfs/ref.mugqic/genomes/species/Homo_sapiens.GRCh38/annotations/Homo_sapiens.GRCh38.Ensembl90.gtf
+python collapse_annotation.py ${REF} Homo_sapiens.GRCh38.Ensembl90_genes.gtf
 ```
+That will generate the file `Homo_sapiens.GRCh38.Ensembl90_genes.gtf` which can
+then be passed to RNA-SeQC
 
 ## Understanding RNA-SeQC options
 The basic options for RNA-SeQC are:
@@ -2240,10 +2252,52 @@ This is done to make the comparison among samples valid. This step allows us to
 focus the analyses into the relevant difference instead of the spurious ones.
 However, DESeq2 requires the un-normalized values as it makes some statistical
 modeling of the errors, and corrects accordingly. That being said, there are a 
-few ways to normalized your data that you should be aware of:
+few ways to normalized your data that you should be aware of :
 
+<table>
+  <thead>
+    <tr>
+      <th>Normalization method</th>
+      <th>Description</th>
+      <th>Accounted factors</th>
+      <th>Recommendations for use</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>CPM</strong> (counts per million)</td>
+      <td>counts scaled by total number of reads</td>
+      <td>sequencing depth</td>
+      <td>gene count comparisons between replicates of the same samplegroup; <strong>NOT for within sample comparisons or DE analysis</strong></td>
+    </tr>
+    <tr>
+      <td><strong>TPM</strong> (transcripts per kilobase million)</td>
+      <td>counts per length of transcript (kb) per million reads mapped</td>
+      <td>sequencing depth and gene length</td>
+      <td>gene count comparisons within a sample or between samples of the same sample group; <strong>NOT for DE analysis</strong></td>
+    </tr>
+    <tr>
+      <td><strong>RPKM/FPKM</strong> (reads/fragments per kilobase of exon per million reads/fragments mapped)</td>
+      <td>similar to TPM</td>
+      <td>sequencing depth and gene length</td>
+      <td>gene count comparisons between genes within a sample; <strong>NOT for between sample comparisons or DE analysis</strong></td>
+    </tr>
+    <tr>
+      <td>DESeq2’s <strong>median of ratios</strong> [<a href="https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-10-r106">1</a>]</td>
+      <td>counts divided by sample-specific size factors determined by median ratio of gene counts relative to geometric mean per gene</td>
+      <td>sequencing depth and RNA composition</td>
+      <td>gene count comparisons between samples and for <strong>DE analysis</strong>; <strong>NOT for within sample comparisons</strong></td>
+    </tr>
+    <tr>
+      <td>EdgeR’s <strong>trimmed mean of M values (TMM)</strong> [<a href="https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-3-r25">2</a>]</td>
+      <td>uses a weighted trimmed mean of the log expression ratios between samples</td>
+      <td>sequencing depth, RNA composition, and gene length</td>
+      <td>gene count comparisons between and within samples and for <strong>DE analysis</strong></td>
+    </tr>
+  </tbody>
+</table>
 
-
+from [hbctraining](https://hbctraining.github.io/Training-modules/planning_successful_rnaseq/lessons/sample_level_QC.html)
 
 <!--
 # Transcript assembly with Cufflinks
