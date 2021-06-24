@@ -46,7 +46,14 @@ Table of Contents
     
 * [Quantifying Ribosomal RNA](#quantifying-ribosomal-rna)
   * [Using BWA](#using-bwa)
- 
+
+* [Running ALL in one pipeline! GENPIPES](#running-all-in-one-pipeline-genpipes)
+    * [Setting up GENPIPES in Compute Canada](#setting-up-genpipes-in-compute-canada)
+    * [Running GENPIPES in Compute Canada](#running-genpipes-in-compute-canada)
+        * [Configuration files](#configuration-files)
+
+
+<!--    
 * [Post-alignment quality control](#post-alignment-quality-control)
   * [Introduction to RNASeQC](#introduction-to-rnaseqc)
   * [Understanding RNASeQC options](#understanding-rnaseqc-options)
@@ -57,7 +64,7 @@ Table of Contents
      * [Running HTSeq in Compute Canada](#running-htseq-in-compute-canada)
 
     
-<!--
+
 * [Transcript assembly with Cufflinks](#transcript-assembly-with-cufflinks)
   * [Introduction to transcriptome assembly](#Introduction-to-transcriptome-assembly)
   * [Understanding Samtools hardclip](#understanding-samtools-hardclip)
@@ -1912,7 +1919,7 @@ bwa mem -t ${SLURM_CPUS_PER_TASK} ${path2ref} YOUR_R1_Goes_HERE YOUR_R2_Goes_HER
 Check out the output and tell me if is OK!
 </details>
 
-
+<!--
 # Post-alignment quality control
 We have done significant work so far, however, you do not know how good your 
 alignments are, and if general what is the quality of your data. For that we need
@@ -2299,7 +2306,7 @@ few ways to normalized your data that you should be aware of :
 
 from [hbctraining](https://hbctraining.github.io/Training-modules/planning_successful_rnaseq/lessons/sample_level_QC.html)
 
-<!--
+
 # Transcript assembly with Cufflinks
 ## Introduction to transcriptome assembly
 
@@ -2319,3 +2326,688 @@ https://www.samformat.info/sam-format-flag
 ## Understanding Cuffnorm
 ## Running Cufflinks bundle on your data
 -->
+
+# Running ALL in one pipeline! GENPIPES
+`GENPIPES` is a bundle of multiple bioinformatics pipelines developed and maintain
+by [C3G](https://www.computationalgenomics.ca/) and it is available in Compute 
+Canada. According to [their documentation](https://genpipes.readthedocs.io/en/genpipes-v-3.4.0/):
+
+>GenPipes is an open source Python-based Workflow Management System (WMS) for 
+> Next Generation Sequencing (NGS) genomics pipeline development. 
+> As part of its implementation, GenPipes includes a set of high-quality, 
+> standardized analysis pipelines, designed for high-performance computing (HPC)
+> resources and cloud environments. 
+> GenPipes pipelines have been tested, continuously improved through industry 
+> standard benchmarks, and used extensively over the past 4 years. By combining 
+> both WMS and extensively validated end-to-end genomic analysis workflows, into 
+> a simple tool, GenPipes not only enables bioinformatics professionals but also 
+> students, researchers in need of bioinformatics tools to perform turnkey 
+> analyses for a wide range of bioinformatics applications in the genomics field. 
+> It also allows flexible and robust extensions for advanced genomics research.
+
+`GENPIPES` have a battery of bioinformatic analyses, but here we will focused on
+[RNASeq](https://genpipes.readthedocs.io/en/genpipes-v-3.4.0/user_guide/pipelines/gp_rnaseq.html?highlight=rnaseq).
+
+Since `GENPIPES` is essentially a workflow manager, the usage is significantly
+different of what we have done so far. For example, you will run the pipeline on
+the login node, and the pipeline itself will submit multiple individual jobs
+to the scheduler.
+
+`GENPIPES` follow the schema below:
+
+![alt](https://genpipes.readthedocs.io/en/genpipes-v-3.4.0/_images/rnaseq.png)
+
+## Setting up GENPIPES in Compute Canada
+As mentioned, `GENPIPES` is available in all general purpose clusters in Compute
+Canada (Graham, Cedar, and Beluga). However, there are a few steps to make all
+the tools visible to you. Specifically, you need to export some variables, and
+tell the modules software how to use it:
+
+```bash
+## GenPipes/MUGQIC genomes and modules
+# Set the HOME where programs and modules are
+export MUGQIC_INSTALL_HOME=/cvmfs/soft.mugqic/CentOS6
+# Tell the module program where to look for genpipes modules
+module use $MUGQIC_INSTALL_HOME/modulefiles
+# Load the particular python that genpipes runs in
+module load mugqic/python/2.7.14
+# Load the desired genpipes version
+module load mugqic/genpipes/<latest_version>
+# Export some variables with your info
+export JOB_MAIL=<my.name@my.email.ca>
+export RAP_ID=<my-rap-id>
+```
+
+You will need to replace `<my.name@my.email.ca>` with your own email,
+`<my-rap-id>` with your lab's account (usually `def-PIuser` or `rrg=PIuser`), 
+and `<latest_version>` with the genpipes version you want (current latest version
+is 3.4.0).
+You can add some or all of the lines in your `~/.bash_profile` file if you want
+the changes to be permanent. Otherwise, you will have to do the loads and exports
+every time you want to run `GENPIPES`.
+
+You can check available pipline at `$MUGQIC_INSTALL_HOME/software/genpipes/genpipes-3.4.0/pipelines`"
+
+```bash
+ls $MUGQIC_INSTALL_HOME/software/genpipes/genpipes-3.4.0/pipelines
+
+ampliconseq  container.ini  dnaseq_high_coverage     __init__.py  rnaseq
+chipseq      covseq         hicseq                   methylseq    rnaseq_denovo_assembly
+common.py    dnaseq         illumina_run_processing  nanopore     rnaseq_light
+```
+You can see that there are multiple pipelines that you can choose from. For this
+course we will focus on `$MUGQIC_INSTALL_HOME/software/genpipes/genpipes-3.4.0/pipelines/rnaseq`.
+
+## Running GENPIPES in Compute Canada
+All `GENEPIPES` pipelines use a configuration file with the extension `.ini`. So
+before we proceed, we need to understand it. 
+### Configuration files
+#### Why does GenPipes need configuration file?
+As per their docs:
+>An ini file is a file that contains parameters needed to run a pipeline. Our 
+> genome alignment pipeline contains over 20 steps, each involving over 5 
+> parameters per step. Imagine having to type all 100 parameters to run a 
+> pipeline! For simplicity, all the parameters are stored in an “ini” file 
+> (extention.ini) that accompanies the pipeline.
+
+The same is true for their RNA seq pipeline. As we saw in each of the steps that
+we have follow until now. Luckily for you, some pre-filled config files are available
+in Compute Canada for you to modify with you own needs. 
+From this point onward, I will assume that you'll be running the pipeline in the
+`Graham` cluster. If youa re not, adjust accordingly. Since we are intending to
+run a full RNAseq analysis, we can find the apropriate template for the configuration
+file at `$MUGQIC_INSTALL_HOME/software/genpipes/genpipes-3.4.0/pipelines/rnaseq`. 
+Make a copy of the `rnaseq.graham.ini` configuration file and explore it:
+
+```bash
+cd ~/scratch
+cp $MUGQIC_INSTALL_HOME/software/genpipes/genpipes-3.4.0/pipelines/rnaseq/rnaseq.graham.ini .
+```
+
+You will see that the template looks like this (this is a cropped version showing 
+the head and the tail):
+
+```text
+[DEFAULT]
+# Cluster
+cluster_submit_cmd=sbatch
+cluster_submit_cmd_suffix= | grep "[0-9]" | cut -d\  -f4
+cluster_walltime=--time=24:00:00
+cluster_cpu= -n 1 -N 1
+# IMPORTANT: update $RAP_ID with your own Resource Allocation Project ID or set it in your $HOME/.bash_profile!
+cluster_other_arg=--mail-type=END,FAIL --mail-user=$JOB_MAIL -A $RAP_ID
+cluster_queue=--mem=4G
+cluster_work_dir_arg=-D
+.
+.
+.
+cluster_cpu=-N 1 -n 1
+
+[ihec_metrics]
+cluster_walltime=--time=5:00:0
+cluster_cpu=-N 1 -n 4
+cluster_queue=--mem=16G
+
+[verify_bam_id]
+cluster_cpu=-N 1 -n 4
+cluster_queue=--mem=38G
+```
+
+Each step/tool section has a header between square brackets (e.g. [DEFAULT]), where 
+you can adjust each parameter as you see fit (although these are mostly already optimal).
+Let's walt to each one of them:
+
+#### `DEFAULT` block
+This is the block which adjust parameters regarding the run as a whole (not per tool),
+like submission type, etc. The `rnaseq.graham.ini` files contains:
+
+```text
+[DEFAULT]
+# Cluster
+cluster_submit_cmd=sbatch
+cluster_submit_cmd_suffix= | grep "[0-9]" | cut -d\  -f4
+cluster_walltime=--time=24:00:00
+cluster_cpu= -n 1 -N 1
+# IMPORTANT: update $RAP_ID with your own Resource Allocation Project ID or set it in your $HOME/.bash_profile!
+cluster_other_arg=--mail-type=END,FAIL --mail-user=$JOB_MAIL -A $RAP_ID
+cluster_queue=--mem=4G
+cluster_work_dir_arg=-D
+cluster_output_dir_arg=-o
+cluster_job_name_arg=-J
+cluster_cmd_produces_job_id=true
+cluster_dependency_arg=--depend=afterok:
+cluster_dependency_sep=:
+cluster_max_jobs=3000
+tmp_dir=${SLURM_TMPDIR}
+
+java_other_options=-XX:ParallelGCThreads=4 -Dsamjdk.buffer_size=1048576
+
+assembly_dir=$MUGQIC_INSTALL_HOME/genomes/species/%(scientific_name)s.%(assembly)s
+```
+
+Given that the template is done especifically for `graham` then you do not need 
+to modify this configuration file. Most of these options are relating to the 
+scheduler. For example, `cluster_submit_cmd` is the command to submit to the 
+scheduler, and as you already know is `sbatch`
+
+#### `picard_sam_to_fastq` block
+This block just gives information of resources needed. In the `rnaseq.graham.ini`
+it is 1 node, 4 cpus and 16Gb of memory:
+
+```text
+[picard_sam_to_fastq]
+cluster_cpu=-N 1 -n 4
+cluster_queue=--mem=16G
+```
+
+#### `samtools_cram_output` block
+The samtools block requests one node and 2 cpus but 48 hours of computation time:
+```time
+[samtools_cram_output]
+cluster_cpu=-N 1 -n 2
+cluster_walltime=--time=48:00:0
+```
+Note that this step bam to cram is high IO and therefore it does not benefit much
+from a higher CPU count.
+
+#### *trimmomatic* block
+You are well acquainted with trimmomatic. In this block, one node and 6 CPUs are
+requested during 24 hours, and with 24G of memory:
+
+```text
+[trimmomatic]
+cluster_walltime=--time=24:00:0
+cluster_cpu=-N 1 -n 6
+cluster_queue=--mem=24G
+```
+
+#### *STAR align* block
+In this case 16 CPUs are requested and set as `OMP_NUM_THREADS` with a lot of
+ram (100G minimum), one day of computation:
+```text
+[star_align]
+threads=16
+ram=100G
+cluster_cpu=-N 1 -n 16
+cluster_walltime=--time=24:00:0
+cluster_queue=--mem=128G
+```
+In this case two possible changes might be beneficial, change the `mem` to 0 and
+the `n` to 32. This way you will reserve a full node. If in your previous runs
+it took significantly less than 24 hours, you could also decrease the time. The 
+latter is only important if you think it will run in 12 hours or less.
+
+#### *STAR index* block
+You also know this one very well. This block asks for 16 threads and 128G of ram, 
+during 15 hours. The adjustments can be similar to `star align`:
+
+```text
+[star_index]
+threads=16
+ram=100G
+cluster_cpu=-N 1 -n 16
+cluster_walltime=--time=15:00:0
+cluster_queue=--mem=128G
+```
+
+#### *STAR junction* block
+This is a small job to identify joints in the star alignment. It only requires 
+one cpu for 5 hours. It does not benefit from extra resources:
+
+```text
+[star_junction]
+cluster_cpu=-N 1 -n 1
+cluster_walltime=--time=5:00:0
+```
+
+#### *picard merge_sam files* block
+Another well known block to you, uses picard to merged required sam/bamfiles. Here
+`GENPIPES` will request 48G of memory, and 12 CPUs in one node for one day:
+
+```text
+[picard_merge_sam_files]
+ram=40G
+cluster_walltime=--time=24:00:0
+cluster_cpu=-N 1 -n 12
+cluster_queue=--mem=48G
+```
+
+#### *picard sort_sam* block
+This block requests 48G and 12 CPUs for 24 hours:
+
+```text
+[picard_sort_sam]
+ram=40G
+cluster_walltime=--time=24:00:0
+cluster_cpu=-N 1 -n 12
+cluster_queue=--mem=48G
+```
+
+#### *picard_mark_duplicates* block
+This is also a heavy read/write block, hence it takes loner but with less CPU/MEM
+resources:
+
+```text
+[picard_mark_duplicates]
+ram=14G
+cluster_walltime=--time=48:00:0
+cluster_cpu=-N 1 -n 5
+cluster_queue=--mem=20G
+```
+
+#### *rnaseqc* block
+This module runs a lot of analyses of your RNA seq, hence it requires a long run
+with 12 CPUs, and 48G of memory.
+
+```text
+[rnaseqc]
+cluster_walltime=--time=72:00:0
+cluster_cpu=-N 1 -n 12
+ram=40G
+cluster_queue=--mem=48G
+```
+
+#### *bed_graph* block
+To process some of the bed files produce in intermediary files, `bed_graph` block
+ask for 8 CPUs and 12 hours of computation.
+```text
+[bed_graph]
+cluster_walltime=--time=12:00:0
+cluster_cpu=-N 1 -n 8
+cluster_queue=--mem=38G
+```
+
+#### *wiggle* block
+Wiggle produces a nice visual report in the form of tracks, to be visualize in 
+any genome browser. To do that `genpipes` requests 12 hours of 12 CPUs and 48G
+of memory:
+
+```text
+[wiggle]
+cluster_walltime=--time=12:00:0
+cluster_cpu=-N 1 -n 12
+cluster_queue=--mem=48G
+```
+
+#### *htseq_count* block
+`htseq_count` produce the raw counts of copies in each of the genes in the 
+reference genome. In this block one day with 6 CPUs and 24G of memory are requested.
+```text
+[htseq_count]
+cluster_walltime=--time=24:00:0
+cluster_cpu=-N 1 -n 6
+cluster_queue=--mem=24G
+```
+#### *tuxedo_hard_clip* block
+`tuxedo_hard_clip` removes all unmapped and uncomplete reads from the mapping. It
+has an intermediate memory intensity and that is why 32G are requested along with
+8 CPUs for a day.
+```text
+[tuxedo_hard_clip]
+cluster_walltime=--time=24:00:0
+cluster_cpu=-N 1 -n 8
+cluster_queue=--mem=32G
+```
+
+#### *stringtie* block
+`stringtie` is a fast and highly efficient assembler of RNA-Seq alignments into
+potential transcripts it requires the same ammount of memory, CPU and time than
+the tuxedo block
+```text
+[stringtie]
+cluster_walltime=--time=24:00:0
+cluster_cpu=-N 1 -n 8
+cluster_queue=--mem=32G
+```
+
+
+By now I assume that you got the hang of it, so here are the rest of the options
+without explanation:
+
+```text
+[stringtie_merge]
+cluster_walltime=--time=48:00:0
+cluster_cpu=-N 1 -n 8
+cluster_queue=--mem=32G
+
+[stringtie_abund]
+cluster_cpu=-N 1 -n 8
+cluster_queue=--mem=32G
+
+[cufflinks]
+cluster_walltime=--time=48:00:0
+cluster_cpu=-N 1 -n 8
+cluster_queue=--mem=32G
+
+[cuffmerge]
+cluster_walltime=--time=48:00:0
+cluster_cpu=-N 1 -n 8
+cluster_queue=--mem=32G
+
+[cuffquant]
+cluster_walltime=--time=48:00:0
+cluster_cpu=-N 1 -n 8
+cluster_queue=--mem=32G
+
+[cuffdiff]
+cluster_walltime=--time=48:00:0
+cluster_cpu=-N 1 -n 8
+cluster_queue=--mem=32G
+
+[cuffcompare]
+cluster_walltime=--time=2:00:0
+cluster_cpu=-N 1 -n 1
+[cuffnorm]
+cluster_walltime=--time=48:00:0
+cluster_cpu=-N 1 -n 8
+cluster_queue=--mem=32G
+
+[picard_collect_multiple_metrics]
+cluster_walltime=--time=24:00:0
+cluster_cpu=-N 1 -n 12
+ram=40G
+cluster_queue=--mem=48G
+
+[picard_collect_rna_metrics]
+ram=40G
+cluster_walltime=--time=24:00:0
+cluster_cpu=-N 1 -n 12
+cluster_queue=--mem=48G
+
+[picard_rna_metrics]
+ram=40G
+cluster_walltime=--time=24:00:0
+cluster_cpu=-N 1 -n 12
+cluster_queue=--mem=48G
+
+[estimate_ribosomal_rna]
+cluster_walltime=--time=24:00:0
+cluster_cpu=-N 1 -n 12
+cluster_queue=--mem=48G
+[bwa_mem_rRNA]
+cluster_walltime=--time=24:00:0
+cluster_cpu=-N 1 -n 16
+cluster_queue=--mem=64G
+
+[picard_sort_sam_rrna]
+ram=7G
+cluster_cpu=-N 1 -n 2
+cluster_queue=--mem=8G
+java_other_options=-XX:ParallelGCThreads=1  -Dsamjdk.buffer_size=1048576
+
+[metrics]
+cluster_walltime=--time=5:00:0
+cluster_cpu=-N 1 -n 1
+
+[rpkm_saturation]
+threads=15
+other_options=1
+cluster_walltime=--time=24:00:0
+cluster_cpu=-N 1 -n 16
+cluster_queue=--mem=128G
+
+[differential_expression]
+cluster_walltime=--time=10:00:0
+cluster_cpu=-N 1 -n 1
+
+[differential_expression_goseq]
+cluster_walltime=--time=10:00:0
+cluster_cpu=-N 1 -n 1
+
+[gq_seq_utils_exploratory_analysis_rnaseq]
+cluster_walltime=--time=00:30:0
+cluster_cpu=-N 1 -n 1
+
+[ihec_metrics]
+cluster_walltime=--time=5:00:0
+cluster_cpu=-N 1 -n 4
+cluster_queue=--mem=16G
+
+[verify_bam_id]
+cluster_cpu=-N 1 -n 4
+cluster_queue=--mem=38G
+```
+
+Notice that there are some cases in which the word cluster is not prepended. That
+means that some extra variables are being defined. For example, when you see `threads`
+this will assign the environmental variable `OMP_NUM_THREADS` that is read by some 
+software.
+
+### Design file
+As per `GENPIPES` documentation:
+>In addition to the configuration files and the input readset file, certain 
+> pipelines such as ChIP-Seq and RNA sequencing (RNA-Seq), require a design 
+> file that describes each contrast. Custom sample groupings can be defined 
+> in the design file
+
+This is beacause you need to tell the pipeline which one is your control and 
+which ones your treatment, along with other information. Let's take a look at
+the design file:
+
+```text
+Sample Contrast_AB Contrast_AC
+sampleA 1 1
+sampleB 2 0
+sampleC 0 2
+sampleD 0 0
+```
+
+As you can see, the design file is a tab-separated plain text file with one 
+line per sample. The columns are `Sample` and as many contrasts as you need. 
+In the example above we have two contrasts: `sampleA` vs `sampleB`, and 
+`sampleA` vs `sampleC`. note that `0` means that the sample does not belong to 
+any group, `1` means that the sample belongs to the control group, and `2`
+that the sample belongs to the treatment test case group. In the example above
+we state that sample A is the control in both contrasts
+
+### Read Set File
+The other file that you must provide to the pipeline is the read set file.
+The readset file is a tab-separated file that contains the following information:
+
+Field |Contents| 
+---|---|
+Sample:|Sample must contain letters A-Z, numbers 0-9, hyphens (-) or underscores (_) only; BAM files will be merged into a file named after this value; **mandatory**. |
+Readset:|a unique readset name with the same allowed characters as above; **mandatory**.|
+Library:|Information about the library. **Optional**.|
+RunType:|PAIRED_END or SINGLE_END; **mandatory**.|
+Run:|1 to use in this run 0 not to use it; **mandatory**.|
+Lane:|Lane used; **mandatory**.|
+Adapter1:| sequence of the forward trimming adapter; **mandatory**.|
+Adapter2:|sequence of the reverse trimming adapter; **mandatory**.|
+QualityOffset:|quality score offset integer used for trimming; **optional**.
+BED:|relative or absolute path to BED file; **optional**.|
+FASTQ1:|relative or absolute path to first FASTQ file for paired-end readset or single FASTQ file for single-end readset; **mandatory if BAM value is missing**.|
+FASTQ2:|relative or absolute path to second FASTQ file for paired-end readset; **mandatory if RunType value is “PAIRED_END”**.|
+BAM:|relative or absolute path to BAM file which will be converted into FASTQ files if they are  not available; **mandatory if FASTQ1 value is missing, ignored otherwise**.|
+
+If you sequenced your reads in Genome Quebec and still have access to nanuq, 
+there is a helper script `$MUGQIC_PIPELINES_HOME/utils/csvToreadset.R` that 
+takes a csv file downloadable from nanuq and creates the Readset file. 
+Otherwise you need to do it by hand.
+
+### Finding genpipes in Compute Canada
+To use GenPipes in Compute Canada clusters you will need to load it. However,
+genpipes is manage by a third party, and therefore they have their own stack.
+Luckily, the C3G folks have been kind enough to make it work in our systems 
+with a few steps:
+1. Export the base path where C3G software stack is located:
+   `export MUGQIC_INSTALL_HOME=/cvmfs/soft.mugqic/CentOS6`
+2. Tell LMOD (the modules platform) to use the C3G modules:
+   `module use $MUGQIC_INSTALL_HOME/modulefiles`
+3. In the case of genpipes, they worked with a very specific version of python,
+   so let's load it:
+   `module load mugqic/python/2.7.14`
+4. Load the desired version of genpipes (you can also use spider to check):
+   `module load mugqic/genpipes/<latest_version>`
+5. Genpipes looks for your email and account, so let's set it:
+   ```
+   export JOB_MAIL=<my.name@my.email.ca>
+   export RAP_ID=<my-rap-id>
+   ```
+The RAP_ID is the account that you can submit jobs to our clusters, usually 
+def-someuser, someuser being the PI of the group.
+
+Once that is set, you can run the pipline creator by:
+
+```
+rnaseq.py -c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.base.ini \
+$MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.graham.ini -r readset.rnaseq.txt \
+-d design.rnaseq.txt > rnaseqCommands.sh
+```
+
+This will generate a bash file with all the submissions of each step to our 
+queue just by doing:
+
+```
+bash rnaseqCommands.sh
+```
+
+then you will notice how the jobs start being submitted!!! now let's take a 
+closer look to the options that the RNAseq pipeline builder `rnaseq.py` from
+genpipes has.
+
+#### CONFIG (-c)
+The config option allows you to pass a list of config files with `.ini` 
+extension.  We cover part of their contents earlier. It contains all the info 
+for the resources and variables needed at each step. You can pass as many files
+as you like and it will be overwritten in the order you pass them. For example,
+in the example we saw earlier, we passed two config files, the `rnaseq.base.ini` 
+and `rnaseq.graham.ini`. Anything variable that exist in both side will only
+retain the value in `rnaseq.graham.ini` as is the last one passed.
+For all intends and purposes you can use the ones provided by genepipes located at 
+`$MUGQIC_PIPELINES_HOME/pipelines/rnaseq`. The `rnaseq.base.ini` contains 
+general information, while the `rnaseq.graham.ini` conatains information 
+pertaining to the Graham cluster. You can see other clusters in the same path.
+
+#### STEPS (-s, --steps)
+GenPipes has the ability to only run a particular range of interest in the 
+steps of the pipeline:
+
+![alt](https://bitbucket.org/mugqic/genpipes/raw/master/resources/workflows/GenPipes_rnaseq.png)
+
+As you can see there are about 25 steps (some of which you'll need to skip, for
+example step 1). Say you want to only run steps 2 to 6, then your'll pass 
+`-s 2-6`.
+
+#### OUTPUT_DIR (-o, --output-dir)
+If you want the output in anything different than the current working directory,
+pass it throgh the `-o` option.
+
+#### Scheduler (-j,--job-scheduler)
+The type of scheduler you are using (e.g  pbs, batch, daemon, slurm). In 
+Compute Canada we use the default SLURM
+
+#### Force Job re-run (-f, --force)
+By default, genpipes will not generate jobs that have already been done. You
+can force it to be redone, by using the `-f` flag
+
+#### No JSON (--no-json)
+By default, the pipeline creates one JSON (a type of file) per each sample. You
+can disable this with the `--no-json` flag.
+
+#### Create a Report (--report)
+With this flag, `rnaseq.py` will generate a report by merging all job markdown
+report files in the given step range into HTML, if they exist.
+If `--report` is set, `--job-scheduler`, `--force`, `--clean` options and job 
+up-to-date status are ignored
+
+####  Clean up (--clean)
+With this flag a job script will be created, with the 'rm' commands for all job
+removable files in the given step range, if they exist. If --clean is
+set, `--job-scheduler`, `--force` options and job up-to-date status are ignored. 
+
+#### Level of information in Logs (-l, --log)
+You can choose the level of information available in the logs, from debug,
+info, warning, error, and critical. By default is set to `info`.
+
+#### Sanity check (--sanity-check) 
+Run the pipeline in `sanity check mode` to verify that all the input files 
+needed for the pipeline to run are available on the system, a.k.a dry-run
+
+#### Run in a container (--container)
+You can use this option if you have a properly setup container as `wrapper` or
+`singularity`. You need to provide valid singularity image path.
+
+#### Design file (-d, --design)
+The design of your RNAseq experiment (as explained above)
+
+#### Assembly type (-t, --type)
+Using wthis option you can select wether to use `cufflinks` or `stringtie` as 
+RNA-seq assembly method, the latter being the default.
+
+#### Read Set file (-r, --readsets)
+The readseq file as explained above.
+
+### Running an example before you use your reads
+Let's try this out:
+1. First, let's download some example data:
+    ```
+    wget https://www.computationalgenomics.ca/tutorial/c3g_analysis_workshop/C3GAW_RNA_TestData_Aug2018.zip
+    unzip C3GAW_RNA_TestData_Aug2018
+    cd C3GAW_RNA_TestData_Aug2018
+    ```
+2. Now follow the steps explained above to load genpipes (remember to change
+   the variables between the `<` and `>` symbols)
+   ```
+   ## GenPipes/MUGQIC genomes and modules
+   export MUGQIC_INSTALL_HOME=/cvmfs/soft.mugqic/CentOS6
+    module use $MUGQIC_INSTALL_HOME/modulefiles
+    module load mugqic/python/2.7.14
+    module load mugqic/genpipes/<latest_version>
+    export JOB_MAIL=<my.name@my.email.ca>
+    export RAP_ID=<my-rap-id>
+   ```
+3. Explore the sample readset file:
+   ```
+   less readset.rnaseq.txt
+   ```
+4. Explore the design file:
+   ```
+   less design.rnaseq.txt
+   ```
+5. Explore the config files that we will be using:
+   ```
+   less $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.base.ini
+   less $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.graham.ini
+   ```
+6. Run a sanity check to make sure all is good:
+   ```bash
+   rnaseq.py -c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.base.ini \
+   $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.graham.ini -r readset.rnaseq.txt \
+   -d design.rnaseq.txt --sanity-check
+   ```
+7. Run the pipeline builder:
+   ```bash
+   rnaseq.py -c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.base.ini \
+   $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.cedar.ini -r readset.rnaseq.txt \
+   -d design.rnaseq.txt > rnaseqCommands.sh
+   ```
+8. Check the commands created:
+   ```bash
+   less rnaseqCommands.sh
+   ```
+9. Launch all the required jobs (**Warning: this will send you a lot of emails**):
+   ```bash
+   bash rnaseqCommands.sh
+   ```
+10. When you stop receiving emails, check the results.
+11. Generate a report in html:
+    ```bash
+    rnaseq.py -c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.base.ini \
+    $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.graham.ini -r readset.rnaseq.txt \
+    -d design.rnaseq.txt --report > report.sh
+    bash report.sh
+    ```
+12. Move the report folder to your own computer (or double click in it if using
+    MobaXterm) and visualize it in your browser 
+13. Clean up:
+    ```bash
+    rnaseq.py -c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.base.ini \
+    $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.graham.ini -r readset.rnaseq.txt \
+    -d design.rnaseq.txt --clean > cleanup.sh
+    bash cleanup.sh
+    ```
+
+And voila! now do it for your readsets.
+
+Good luck!
